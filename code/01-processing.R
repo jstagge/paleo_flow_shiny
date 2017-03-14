@@ -156,8 +156,8 @@ flow_plot <- ts(flow_plot, start=plot_start, frequency=12)
 flow_logan <- flow_plot
 plot(flow_logan)
 
-
-
+### Logan start 
+write.csv(plot_start, file.path(write_output_path,"start_10109001.csv"), row.names=FALSE)
 
 
 
@@ -231,11 +231,15 @@ flow_plot <- ts(flow_plot, start=plot_start, frequency=12)
 flow_bear <- flow_plot
 plot(flow_bear)
 
+### Bear start 
+write.csv(plot_start, file.path(write_output_path,"start_10011500.csv"), row.names=FALSE)
 
 
 ###########################
 ###  Save results for online read
 ###########################
+write.csv(flow_bear, file.path(write_output_path,"flow_10011500.csv"), row.names=FALSE)
+write.csv(flow_logan, file.path(write_output_path,"flow_10109001.csv"), row.names=FALSE)
 
-write.csv(flow_bear, file.path(write_output_path,"flow_10011500.csv"))
-write.csv(flow_logan, file.path(write_output_path,"flow_10109001.csv"))
+
+
