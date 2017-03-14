@@ -67,6 +67,7 @@ require(googleVis)
 require(shiny)
 library(dygraphs)
 library(datasets)
+require(shinythemes)
 
 ### Load project specific functions
 file.sources = list.files(function_path, pattern="*.R", recursive=TRUE)
@@ -118,7 +119,7 @@ max_y <- max(c(flow_ts), na.rm=TRUE)
 ###########################
 
 ui <- fluidPage(
-  
+  theme = shinytheme("sandstone"),
   titlePanel("Streamflow Reconstruction Explorer"),
   
   sidebarLayout(
