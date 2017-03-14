@@ -119,7 +119,7 @@ max_y <- max(c(flow_ts), na.rm=TRUE)
 
 ui <- fluidPage(
   
-  titlePanel("Monthly Flow Reconstruction"),
+  titlePanel("Streamflow Reconstruction Explorer"),
   
   sidebarLayout(
     sidebarPanel(
@@ -131,7 +131,11 @@ ui <- fluidPage(
       helpText("Click and drag to zoom in (double click to zoom back out).")
     ),
     mainPanel(
-    dygraphOutput("tsPlot")
+    tabsetPanel(
+        tabPanel("Time Series", dygraphOutput("tsPlot")),
+        tabPanel("Extremes", tags$p("Place Holder")), 
+        tabPanel("Goodness of Fit", tags$p("Place Holder"))
+      )
     )
   )
 )
