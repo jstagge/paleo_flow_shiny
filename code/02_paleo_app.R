@@ -83,7 +83,7 @@ sapply(file.path(global_path, file.sources),source)
 ###########################################################################
 ### Set site data
 site_id_list <- c("10109001", "10011500")
-site_name_list <- c("Logan Utah", "Bear River near Utah-Wyo")
+site_name_list <- c("Logan River", "Bear River near Utah-Wyo")
 recons_file_name_list <- c("logan2013flow.txt", "bear2015flow.txt")
 
 first_month_wy <- 10 ### Water Year starts on Oct 1
@@ -120,10 +120,28 @@ max_y <- max(c(flow_ts), na.rm=TRUE)
 
 ui <- fluidPage(
   theme = shinytheme("sandstone"),
-  titlePanel("Streamflow Reconstruction Explorer"),
+  titlePanel("Reconstructed Streamflow Explorer"),
   
   sidebarLayout(
     sidebarPanel(
+    
+   ### Input for time resolution
+ 	selectizeInput(
+        'time_resolution', 'Resolution', choices = c(`Monthly` = 'monthly'),multiple = FALSE),  
+      
+  ### Input for site location
+ 	selectizeInput(
+        'site_name', 'Site Location', choices = list(
+      'Utah, USA' = c(`Logan River` = '10109001', `Bear River near Utah-Wyo` = '10011500'),
+      Other = c(`...` = 'NA')
+    ),
+    multiple = FALSE,
+        options = list(
+          placeholder = 'Please select a site below',
+          onInitialize = I('function() { this.setValue(""); }')
+        )
+      ),     
+    
       tags$div(class="header", checked=NA,
                tags$p("Reconstructions based on Stagge et al. (2017)."),
                tags$p("Data is based on USGS gauges at the ", tags$a(href="https://waterdata.usgs.gov/usa/nwis/uv?site_no=10109000", "Logan River"), " and the ", tags$a(href="https://waterdata.usgs.gov/usa/nwis/uv?site_no=10011500", "Bear River"))
@@ -134,7 +152,7 @@ ui <- fluidPage(
     mainPanel(
     tabsetPanel(
         tabPanel("Time Series", dygraphOutput("tsPlot")),
-        tabPanel("Extremes", tags$p("Place Holder")), 
+        tabPanel("Extremes",  verbatimTextOutput('site_out')), 
         tabPanel("Goodness of Fit", tags$p("Place Holder"))
       )
     )
@@ -142,9 +160,37 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
+
+### Set initial values
+site_id_list <- c("10109001", "10011500")
+site_name_list <- c("Logan River", "Bear River near Utah-Wyo")
+
+### Read in Site ID Number
+#  site_id_number <- reactive({input$site_name})
+  
+### Determine Site Name from number 
+#	site_id_name <- reactive({
+#		site_name_test <- site_id_list %in% site_id_number()
+#		if (sum(site_name_test)>0) {
+#			site_name_list[site_name_test]
+#		 } else {
+#			""
+#		}
+#	})
+
+yup <- reactive({read_in_paleo(input$site_name, site_id_list=site_id_list, site_name_list=site_name_list)})
+
+
+### Test to print the Site ID Number  
+   output$site_out <- renderPrint({
+    yup()$site_name
+  })
+
+
+### Time Series plot
   output$tsPlot <- renderDygraph({
-    dygraph(flow_ts, main = "Logan River", group = "lung-deaths") %>%
-    dyRangeSelector(dateWindow = c("1800-01-01", "1995-01-01")) %>%
+    dygraph(flow_ts, main = yup()$site_name) %>%
+    dyRangeSelector(dateWindow = c("1650-01-01", "1995-01-01")) %>%
     dyOptions(axisLineWidth = 1.5, drawGrid = FALSE) %>%
     dyLegend(show = "always", hideOnMouseOut = FALSE, labelsSeparateLines=TRUE) %>%
     dyAxis("y", label = "Monthly Mean Discharge (m3/s)", valueRange=c(0, max_y)) %>%
@@ -152,6 +198,7 @@ server <- function(input, output) {
     dySeries("Monthly_Recon", color="#404040", strokeWidth = 1.5) %>%
     dySeries("Annual_Recon", color="#377eb8", strokeWidth = 2, strokePattern = "dashed")
   })
+  
 }
 
 shinyApp(ui = ui, server = server)
