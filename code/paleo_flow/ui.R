@@ -25,21 +25,16 @@ fluidPage(
         
    		### Input for subset
  		selectizeInput('time_subset', 'Date Subset', 
- 			choices = c(`Full` = '0', `January` = '1', `February` = '2', `March` = '3', `April` = '4', `May` = '5', `June` = '6', `July` = '7', `August` = '8', `September` = '9', `October` = '10', `November` = '11', `December` = '12' ),
+ 			choices = c(`Full Timeseries` = '0', `January` = '1', `February` = '2', `March` = '3', `April` = '4', `May` = '5', `June` = '6', `July` = '7', `August` = '8', `September` = '9', `October` = '10', `November` = '11', `December` = '12' ),
  			multiple = FALSE),  
              
 		### Input for units
 		selectizeInput('flow_units', 'Flow Units', 
 			choices = c(`Mean m3/s` = 'm3s', `Mean ft3/s` = 'cfs', `Total acre-ft` = 'ac-ft'),
 			multiple = FALSE),  
-        
-        ### Text information          
-		tags$div(class="header", checked=NA,
-        	tags$p("Reconstructions based on Stagge et al. (2017)."),
-            tags$p("Data is based on USGS gauges at the ", tags$a(href="https://waterdata.usgs.gov/usa/nwis/uv?site_no=10109000", "Logan River"), " and the ", tags$a(href="https://waterdata.usgs.gov/usa/nwis/uv?site_no=10011500", "Bear River"))
-	  		), 
-      	br(),
-      	helpText("Click and drag to zoom in (double click to zoom back out).")
+		br(),
+      		helpText("Summary of extremes and goodness of fit are available in tabs along top.")	
+    
     ),
 
 ###########################################################################
@@ -48,7 +43,19 @@ fluidPage(
     # Display results
     mainPanel(
      tabsetPanel(
-        tabPanel("Time Series", dygraphOutput("tsPlot")),
+        tabPanel("Time Series", 
+        
+        	dygraphOutput("tsPlot"),
+        	br(),
+        	br(),
+            ### Text information          
+			tags$div(class="header", checked=NA,
+        	tags$p("Reconstructions based on Stagge et al. (2017). Data is based on USGS gauges at the ", tags$a(href="https://waterdata.usgs.gov/usa/nwis/uv?site_no=10109000", "Logan River"), " and the ", tags$a(href="https://waterdata.usgs.gov/usa/nwis/uv?site_no=10011500", "Bear River"))
+	  		), 
+      		br(),
+      		helpText("Click and drag within the timeseries to zoom in or use the scroll bar at the bottom to explore. Double click within graph to zoom out to entire reconstruction.")		
+        
+        ),
         tabPanel("Extremes",  verbatimTextOutput('site_out')), 
         tabPanel("Goodness of Fit", tags$p("Place Holder"))
       )

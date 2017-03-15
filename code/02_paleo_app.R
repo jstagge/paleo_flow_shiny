@@ -62,6 +62,7 @@ require(rsconnect)
 ###########################################################################
 runApp("paleo_flow", display.mode = "showcase")
 
+runApp("paleo_flow")
 
 
 
