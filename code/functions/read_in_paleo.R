@@ -17,18 +17,19 @@
 # *------------------------------------------------------------------
 
 
-read_in_paleo <- function(site_id, site_id_list, site_name_list){ 
+read_in_paleo <- function(site_id_list, site_name_list){ 
 
 ### Create a list to hold the output  
 paleo_readin <- list()    
-paleo_readin$site_id <- site_id 
 
-### Determine which one of the read in time series from the number
-site_list_id <- which(site_id_number == site_id_list)
+for (n in seq(1, length(site_id_list))) {
+paleo_readin[[n]] <- list()
 
-### Determine the site name  
-paleo_readin$site_name <- site_name_list[site_list_id]  
- 
+### Save the site ID and name 
+site_id <- site_id_list[[n]]
+paleo_readin[[n]]$site_id <- site_id
+paleo_readin[[n]]$site_name <- site_name_list[[n]]  
+
 ### Read in flow data
 flow_ts <- read.csv(file.path(write_output_path,paste0("flow_",site_id,".csv"))) 
  
@@ -37,9 +38,11 @@ start_ts <- read.csv(file.path(write_output_path,paste0("start_",site_id,".csv")
 start_ts <- as.numeric(unlist(start_ts))  
 
 ### Create a monthly time series 
-paleo_readin$flow_ts <- ts(flow_ts, start=start_ts, frequency=12)
+paleo_readin[[n]]$flow_ts <- ts(flow_ts, start=start_ts, frequency=12)
+}
 
 ### Output the list of values 
 return(paleo_readin) 
 }
+ 
  
