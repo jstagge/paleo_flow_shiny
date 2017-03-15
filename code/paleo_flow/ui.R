@@ -43,6 +43,10 @@ fluidPage(
     # Display results
     mainPanel(
      tabsetPanel(
+
+###########################################################################
+## Time Series Tab
+###########################################################################     
         tabPanel("Time Series", 
         
         	dygraphOutput("tsPlot"),
@@ -56,8 +60,25 @@ fluidPage(
       		helpText("Click and drag within the timeseries to zoom in or use the scroll bar at the bottom to explore. Double click within graph to zoom out to entire reconstruction.")		
         
         ),
-        tabPanel("Extremes",  verbatimTextOutput('site_out')), 
-        tabPanel("Goodness of Fit", tags$p("Place Holder"))
+        
+###########################################################################
+## Extremes Tab
+###########################################################################           
+        tabPanel("Extremes",  
+        	verbatimTextOutput('site_out')      
+        
+        ), 
+        
+###########################################################################
+## Goodness of Fit Tab
+###########################################################################          
+        tabPanel("Goodness of Fit", 
+        	tags$p("Place Holder"),
+        	plotOutput("DistribPlot")
+        	       
+        
+        )
+      
       )
     )
   )

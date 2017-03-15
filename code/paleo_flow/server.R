@@ -117,11 +117,21 @@ paleo_ts <- reactive({
 	}
 })
 
+
+### Calculate the maximum flow
+y_lims <- reactive({ 
+	max_y <- max(c(paleo_ts()), na.rm=TRUE)
+	max_y <- 1.1*ceiling(max_y)
+	c(0,max_y) 
+	})
+
+
+
 ###########################################################################
 ## Output to extremes tab
 ########################################################################### 
    output$site_out <- renderPrint({
-    flow_units()
+    y_lims()
     
   })
 
@@ -132,14 +142,40 @@ paleo_ts <- reactive({
   output$tsPlot <- 
     renderDygraph({
     dygraph(paleo_ts(), main = site_name()) %>%
-    dyRangeSelector(dateWindow = c("1950-01-01", "1995-01-01")) %>%
+    dyRangeSelector(dateWindow = c("1850-01-01", "1995-01-01")) %>%
     dyOptions(axisLineWidth = 1.5, drawGrid = FALSE, titleHeight= 28) %>%
     dyLegend(show = "always", hideOnMouseOut = FALSE, labelsSeparateLines=TRUE) %>%
-    dyAxis("y", label = paste0("Monthly Mean Discharge (",flow_units(),")")) %>%
+    dyAxis("y", label = paste0("Monthly Mean Discharge (",flow_units(),")"), valueRange=y_lims()) %>%
     dySeries("Observed", color="#e41a1c")  %>%
     dySeries("Monthly_Recon", color="#404040", strokeWidth = 1.5) %>% 
     dySeries("Annual_Recon", color="#377eb8", strokeWidth = 2, strokePattern = "dashed")
   	})    
+  
+  
+  
+  
+###########################################################################
+## Output to goodness of fit plot
+###########################################################################   
+
+  output$DistribPlot <- renderPlot({
+  		selected_data <- data.frame(paleo_ts())
+
+  		p <- ggplot(selected_data, aes(x=Observed, y=Monthly_Recon))
+  		p <- p + geom_hline(yintercept = 0, colour="black")
+  		p <- p + geom_vline(xintercept = 0, colour="black")
+  		p <- p + geom_abline(intercept = 0, slope = 1, colour="red")
+  		p <- p + geom_point()
+  		p <- p + theme_light()
+  		p <- p + scale_x_continuous(name="Observed Flow (m3/s)")
+  		p <- p + scale_y_continuous(name="Reconstructed Flow (m3/s)")
+ 		p <- p + coord_equal(ratio=1)
+  		p
+   })	
+     
+  
+  
+  
   
 }
     
