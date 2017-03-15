@@ -17,7 +17,7 @@
 # *------------------------------------------------------------------
 
 
-read_in_paleo <- function(site_id_list, site_name_list){ 
+read_in_paleo <- function(site_id_list, site_name_list, path){ 
 
 ### Create a list to hold the output  
 paleo_readin <- list()    
@@ -31,14 +31,7 @@ paleo_readin[[n]]$site_id <- site_id
 paleo_readin[[n]]$site_name <- site_name_list[[n]]  
 
 ### Read in flow data
-flow_ts <- read.csv(file.path(write_output_path,paste0("flow_",site_id,".csv"))) 
- 
-### Read in first month  
-start_ts <- read.csv(file.path(write_output_path,paste0("start_",site_id,".csv")))
-start_ts <- as.numeric(unlist(start_ts))  
-
-### Create a monthly time series 
-paleo_readin[[n]]$flow_ts <- ts(flow_ts, start=start_ts, frequency=12)
+paleo_readin[[n]]$flow_ts <- read.csv(file.path(path,paste0("flow_",site_id,".csv"))) 
 }
 
 ### Output the list of values 

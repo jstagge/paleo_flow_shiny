@@ -47,10 +47,14 @@ function_path <- "./functions"
 output_path_base <- file.path(output_path,"paleo_flow_shiny")
 
 write_output_path <- file.path(output_path_base,"monthly_paleo")
+app_output_path <- "./paleo_flow/data"
 
 ### Create output folders
 dir.create(output_path_base)
 dir.create(write_output_path)
+dir.create(app_output_path)
+dir.create(file.path(app_output_path,"monthly"))
+dir.create(file.path(app_output_path,"annual"))
 
 ###########################################################################
 ###  Load functions
@@ -81,6 +85,12 @@ site_id_list <- c("10109001", "10011500")
 site_name_list <- c("Logan River", "Bear River near Utah-Wyo")
 recons_file_name_list <- c("logan2013flow.txt", "bear2015flow.txt")
 
+month_reconst_file_list <- file.path(file.path(output_path,"paleo_monthly/paleo_monthly_gen/percentile_pred_model"))
+month_reconst_file_list <- c(file.path(month_reconst_file_list, "10109001_percentile_pred_model_clim_pca_impute_concur_month_ts_rec_region.csv"), 
+file.path(month_reconst_file_list, "10011500_percentile_pred_model_clim_pca_impute_concur_month_ts_rec.csv")
+)
+
+
 first_month_wy <- 10 ### Water Year starts on Oct 1
 param_cd <- "00060"
 
@@ -88,8 +98,6 @@ param_cd <- "00060"
 ###########################################################################
 ## Create data for Logan
 ###########################################################################
-n <- 1
-
 
 for (n in seq(1,length(site_id_list))) {
 
@@ -97,6 +105,7 @@ for (n in seq(1,length(site_id_list))) {
 site_id <- site_id_list[n]
 site_name <- site_name_list[n]
 recons_file_name <- recons_file_name_list[n]
+month_reconst_file <- month_reconst_file_list[n]
 
 ### Create date information
 date_df <- expand.grid(year=seq(1,2017), month=seq(1,12))
@@ -118,8 +127,7 @@ flow_obs$date <- as.Date(flow_obs$date)
 
 
 ### Read in the reconstructed time series
-reconst_location <- file.path(file.path(output_path,"paleo_monthly/paleo_monthly_gen"), "percentile_pred_model/10109001_percentile_pred_model_clim_pca_impute_concur_month_ts_rec_region.csv")
-reconst_ts <- read.csv(reconst_location)
+reconst_ts <- read.csv(month_reconst_file)
 
 ### Convert date field from character to date
 reconst_ts$date <- as.Date(reconst_ts$date)
@@ -170,6 +178,5 @@ if ((firstNonNA -20) > 1){
 ###  Write to file
 ########################
 write.csv(flow_plot, file.path(write_output_path,paste0("flow_",site_id,".csv")), row.names=FALSE)
-
+write.csv(flow_plot, file.path(app_output_path,paste0("monthly/flow_",site_id,".csv")), row.names=FALSE)
 }
-

@@ -1,0 +1,127 @@
+function(input, output) {
+
+###########################################################################
+## Set the Paths
+###########################################################################
+### Path for Data and Output	
+data_path <- "./data"
+function_path <- "./functions"
+
+###########################################################################
+###  Load functions
+###########################################################################
+### Load these functions for all code
+require(colorout)
+require(assertthat)
+require(reshape2)
+
+### Load these functions for this unique project
+require(ggplot2)
+require(googleVis)
+require(shiny)
+library(dygraphs)
+library(datasets)
+require(shinythemes)
+require(lubridate)
+
+### Load project specific functions
+file.sources = list.files(function_path, pattern="*.R", recursive=TRUE)
+sapply(file.path(function_path, file.sources),source)
+
+
+
+###########################################################################
+## Initial Values
+###########################################################################
+### Set initial values
+site_id_list <- c("10109001", "10011500")
+site_name_list <- c("Logan River", "Bear River near Utah-Wyo")
+
+### Read in data
+paleo_list <- read_in_paleo(site_id_list=site_id_list, site_name_list=site_name_list, path=file.path(data_path, "monthly"))
+
+###########################################################################
+## Determine the site
+###########################################################################
+### Determine which one of the read in time series from the number
+list_id <- reactive({ 
+	list_id_temp <- which(input$site_name == site_id_list)
+	if (length(list_id_temp) == 1) {
+		list_id_temp
+	} else {
+		"None"
+	}
+})
+
+### Extract Site Name
+site_name <- reactive({
+	if (list_id()=="None"){
+		"Please Select Site"
+	} else {
+		paleo_list[[list_id()]]$site_name
+	}
+})
+
+###########################################################################
+## Process time series
+###########################################################################
+
+### Extract the subset information
+subset_input <- reactive({ as.numeric(input$time_subset) })
+		
+### Extract time series
+paleo_ts <- reactive({
+	if (list_id()=="None"){
+		### Generate a blank graph
+		paleo_ts_temp <- data.frame(Observed=rep(NA,300), Annual_Recon=rep(NA,300), Monthly_Recon=rep(NA,300))
+		ts(as.matrix(paleo_ts_temp), start=c(1700,1), frequency=12)
+	} else {
+		### Read time series from list 
+		paleo_ts_temp <- paleo_list[[list_id()]]$flow_ts
+		
+		### Create date vector and apply to time series
+		date_vec <- as.POSIXct(paste0(paleo_ts_temp$Year,"/",paleo_ts_temp$Month, "/15"), format="%Y/%m/%d")
+		paleo_ts_temp <- xts(paleo_ts_temp, date_vec)
+		
+		### If it is not a full time series, subset it and NA out the annual timeseries
+		if (subset_input() > 0) {
+			paleo_ts_temp <- subset(paleo_ts_temp, Month==subset_input())
+			paleo_ts_temp$Annual_Recon <- NA
+#paleo_ts_temp[ ,!(colnames(paleo_ts_temp) %in% c("Annual_Recon"))]
+		}
+
+		### Remove the monthly and annual columns before plotting
+		paleo_ts_temp <- paleo_ts_temp[ ,!(colnames(paleo_ts_temp) %in% c("Month", "Year"))]
+		
+		### Return time series for plot
+	paleo_ts_temp
+
+	}
+})
+
+###########################################################################
+## Output to extremes tab
+########################################################################### 
+   output$site_out <- renderPrint({
+    paleo_list[[2]]
+    
+  })
+
+
+###########################################################################
+## Output to time series plot
+########################################################################### 
+  output$tsPlot <- 
+    renderDygraph({
+    dygraph(paleo_ts(), main = site_name()) %>%
+    dyRangeSelector(dateWindow = c("1650-01-01", "1995-01-01")) %>%
+    dyOptions(axisLineWidth = 1.5, drawGrid = FALSE) %>%
+    dyLegend(show = "always", hideOnMouseOut = FALSE, labelsSeparateLines=TRUE) %>%
+    dyAxis("y", label = "Monthly Mean Discharge (m3/s)") %>%
+    dySeries("Observed", color="#e41a1c")  %>%
+    dySeries("Monthly_Recon", color="#404040", strokeWidth = 1.5) %>% 
+    dySeries("Annual_Recon", color="#377eb8", strokeWidth = 2, strokePattern = "dashed")
+  	})    
+  
+}
+    
