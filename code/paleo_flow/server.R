@@ -68,6 +68,10 @@ site_name <- reactive({
 
 ### Extract the subset information
 subset_input <- reactive({ as.numeric(input$time_subset) })
+
+### Extract the flow units
+flow_units <- reactive({ input$flow_units })
+
 		
 ### Extract time series
 paleo_ts <- reactive({
@@ -87,11 +91,25 @@ paleo_ts <- reactive({
 		if (subset_input() > 0) {
 			paleo_ts_temp <- subset(paleo_ts_temp, Month==subset_input())
 			paleo_ts_temp$Annual_Recon <- NA
-#paleo_ts_temp[ ,!(colnames(paleo_ts_temp) %in% c("Annual_Recon"))]
 		}
 
+		### Convert Units
+		if (flow_units() == "cfs"){
+		paleo_ts_temp <- paleo_ts_temp * 35.31467
+		}
+		if (flow_units() == "ac-ft"){
+		year_month <- as.Date(paste0(paleo_ts_temp$Year,"-", paleo_ts_temp$Month,"-15"))
+		## Convert to cfs
+		paleo_ts_temp <- paleo_ts_temp * 35.31467
+		### Convert to ac-ft per second
+		paleo_ts_temp <- paleo_ts_temp * (1/43560)
+		### Convert to ac-ft per month
+		paleo_ts_temp <- paleo_ts_temp * 60*60*24*days_in_month(year_month)
+		}
+		
 		### Remove the monthly and annual columns before plotting
 		paleo_ts_temp <- paleo_ts_temp[ ,!(colnames(paleo_ts_temp) %in% c("Month", "Year"))]
+
 		
 		### Return time series for plot
 	paleo_ts_temp
@@ -103,7 +121,7 @@ paleo_ts <- reactive({
 ## Output to extremes tab
 ########################################################################### 
    output$site_out <- renderPrint({
-    paleo_list[[2]]
+    flow_units()
     
   })
 
@@ -114,10 +132,10 @@ paleo_ts <- reactive({
   output$tsPlot <- 
     renderDygraph({
     dygraph(paleo_ts(), main = site_name()) %>%
-    dyRangeSelector(dateWindow = c("1650-01-01", "1995-01-01")) %>%
-    dyOptions(axisLineWidth = 1.5, drawGrid = FALSE) %>%
+    dyRangeSelector(dateWindow = c("1950-01-01", "1995-01-01")) %>%
+    dyOptions(axisLineWidth = 1.5, drawGrid = FALSE, titleHeight= 28) %>%
     dyLegend(show = "always", hideOnMouseOut = FALSE, labelsSeparateLines=TRUE) %>%
-    dyAxis("y", label = "Monthly Mean Discharge (m3/s)") %>%
+    dyAxis("y", label = paste0("Monthly Mean Discharge (",flow_units(),")")) %>%
     dySeries("Observed", color="#e41a1c")  %>%
     dySeries("Monthly_Recon", color="#404040", strokeWidth = 1.5) %>% 
     dySeries("Annual_Recon", color="#377eb8", strokeWidth = 2, strokePattern = "dashed")
