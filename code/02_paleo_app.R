@@ -72,7 +72,7 @@ require(xts)
 ###########################################################################
 ## Run the app on personal computer in diagnostic mode
 ###########################################################################
-runApp("paleo_flow", display.mode = "showcase")
+#runApp("paleo_flow", display.mode = "showcase")
 
 runApp("paleo_flow")
 

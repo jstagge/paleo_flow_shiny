@@ -63,17 +63,18 @@ site_name <- reactive({
 })
 
 ###########################################################################
-## Process time series
+## Extract the subset information and flow units
 ###########################################################################
-
-### Extract the subset information
 subset_input <- reactive({ as.numeric(input$time_subset) })
 
 ### Extract the flow units
 flow_units <- reactive({ input$flow_units })
 
 		
-### Extract time series
+###########################################################################
+## Process the time series, keep date columns for later
+###########################################################################
+### Include a catch for before you select a site (blank plot)
 paleo_ts_temp <- reactive({
 	if (list_id()=="None"){
 		### Generate a blank graph
@@ -93,6 +94,24 @@ paleo_ts_temp <- reactive({
 			paleo_ts_temp$Annual_Recon <- NA
 		}
 
+	paleo_ts_temp
+	}
+})
+
+###########################################################################
+## Extract dates from time series
+###########################################################################
+paleo_ts_dates <- reactive({
+	paste0("", paleo_ts_temp()$Month, " / ", paleo_ts_temp()$Year, "")
+})
+
+###########################################################################
+## Process the time series for plotting, remove date columns and covert units
+###########################################################################
+paleo_ts <- reactive({
+		### Remove the monthly and annual columns before plotting
+		paleo_ts_temp <- paleo_ts_temp()[ ,!(colnames(paleo_ts_temp()) %in% c("Month", "Year"))]
+		
 		### Convert Units
 		if (flow_units() == "cfs"){
 		paleo_ts_temp <- paleo_ts_temp * 35.31467
@@ -106,24 +125,13 @@ paleo_ts_temp <- reactive({
 		### Convert to ac-ft per month
 		paleo_ts_temp <- paleo_ts_temp * 60*60*24*days_in_month(year_month)
 		}
-	paleo_ts_temp
-	}
-})
-
-
-paleo_ts_dates <- reactive({
-	paste0("", paleo_ts_temp()$Month, " / ", paleo_ts_temp()$Year, "")
-})
-
-paleo_ts <- reactive({
-		### Remove the monthly and annual columns before plotting
-		paleo_ts_temp <- paleo_ts_temp()[ ,!(colnames(paleo_ts_temp()) %in% c("Month", "Year"))]
 		### Return time series for plot
 	paleo_ts_temp
 })
 
-
-### Calculate the maximum flow
+###########################################################################
+## Calculate maximum flow for plotting range
+###########################################################################
 y_lims <- reactive({ 
 	max_y <- max(c(paleo_ts()), na.rm=TRUE)
 	max_y <- 1.1*max_y
@@ -131,20 +139,37 @@ y_lims <- reactive({
 	})
 
 
+###########################################################################
+## Produce a dataframe holding observed and reconstructed values
+###########################################################################
 gof_df <- reactive({
 	### Test if there are values
   	if(max(paleo_ts()$Observed, na.rm=TRUE) > 0) {
   		### Create dataframe
   		gof_df <- data.frame(paleo_ts())
   		gof_df <- data.frame(Observed=gof_df$Observed, Reconstructed=gof_df$Monthly_Rec)
+ 		
+  		### Add a column for tooltips
+  		### Had to add an extra span because the results kept wrapping around
   		gof_df$Reconstructed.tooltip <- paste0("<b>", paleo_ts_dates(),"</b><br>Observed: ", round(gof_df$Observed,2),"<br>Reconstructed: ", round(gof_df$Reconstructed,2), " <span style='display:inline-block; width: 5;'></span>" )
-  		#,gof_df$Observed,"<br>Reconstructed: ",gof_df$Reconstructed) 
- #paste0("Date: ", paleo_ts_dates())
+
+  	  	### Cut to common reference period
+  	  	refer_test <- complete.cases(gof_df[,c("Observed","Reconstructed")])
+  	  	gof_df <- gof_df[refer_test,]
+  	  	  		
+  		### Add a blank column with two enpoints to produce the 1:1 line
   	  	gof_df$abline <- NA
   	  	gof_df <- rbind(gof_df, data.frame(Observed=y_lims(), Reconstructed=c(NA, NA), Reconstructed.tooltip=c("", ""), abline=y_lims()))
+  	  	  	  	  	  	
+  	  	### Assign to variable
   	  	gof_df
   	  	}		
 	})
+	
+	
+	
+	
+	
 	
 ###########################################################################
 ## Output to extremes tab
@@ -169,67 +194,30 @@ gof_df <- reactive({
     dySeries("Monthly_Recon", color="#404040", strokeWidth = 1.5) %>% 
     dySeries("Annual_Recon", color="#377eb8", strokeWidth = 2, strokePattern = "dashed")
   	})    
-  
-  
-  
-  
+    
 ###########################################################################
-## Output to goodness of fit plot
+## Output to goodness of fit (Obs vs Reconstr) plot
 ###########################################################################   
-
-  output$DistribPlot <- renderPlot({
-  		selected_data <- data.frame(paleo_ts())
-
-  		p <- ggplot(selected_data, aes(x=Observed, y=Monthly_Recon))
-  		p <- p + geom_hline(yintercept = 0, colour="black")
-  		p <- p + geom_vline(xintercept = 0, colour="black")
-  		p <- p + geom_abline(intercept = 0, slope = 1, colour="red")
-  		p <- p + geom_point()
-  		p <- p + theme_light()
-  		p <- p + scale_x_continuous(name="Observed Flow (m3/s)")
-  		p <- p + scale_y_continuous(name="Reconstructed Flow (m3/s)")
- 		p <- p + coord_equal(ratio=1)
-  		p
-   })	
-     
-     
- # output$gof_scatterchart_new <- renderGvis({
- #   gvisScatterChart(gof_df(), options=list(width='100%', height='500px'))
- # })
- 
- output$gof_scatterchart_new <- renderGvis({
+ output$gof_scatter <- renderGvis({
 	gvisComboChart(gof_df(), xvar = "Observed", yvar = c("Reconstructed", "Reconstructed.tooltip", "abline"),
           options=list(seriesType='scatter',
+ 			title="Observed vs. Reconstructed Flow",
  			series='{1: {type:\"line\"}}',
             explorer="{actions: ['dragToZoom' , 'rightClickToReset'], maxZoomIn:0.05}",
             legend="none",
             tooltip="{isHtml:'True'}",                                                                 
-            vAxis="{title:'Reconstructed Flow'}",                        
-            hAxis="{title:'Observed Flow'}",                     
-            width='100%', height=500))
+            vAxis=paste0("{title:'Reconstructed Flow (", flow_units(), ")'}"),                        
+            hAxis=paste0("{title:'Observed Flow (", flow_units(), ")'}"),                    
+            width='100%', height=500,
+            chartArea= "{'width': '80%', 'height': '80%'}"),
+            )
                        
   })
      
-        
-  output$gof_scatterchart_old <- reactive({
-		
-  		list(
-    	  data = googleDataTable( gof_df() ),
-      	  options = list(
-        	title = "fdasf"
-    	  )
-    	)
-  })
-  #output$gof_scatterchart <- reactive({
-  	#gof_df <- data.frame(paleo_ts())
-  	#gof_df <- gof_df[,c("Observed", "Monthly_Rec")]
-  	#gof_df <- as.matrix(gof_df)
-  
-    # Return the data and options
-    #list(
-    #  data = googleDataTable(gof_df)
-    #)
-  #})
+
+
+
+
   
   
 }

@@ -40,7 +40,7 @@ fluidPage(
              
 		### Input for units
 		selectizeInput('flow_units', 'Flow Units', 
-			choices = c(`Mean m3/s` = 'm3s', `Mean ft3/s` = 'cfs', `Total acre-ft` = 'ac-ft'),
+			choices = c(`Mean m3/s` = 'm3/s', `Mean ft3/s` = 'cfs', `Total acre-ft` = 'ac-ft'),
 			multiple = FALSE),  
 		br(),
       		helpText("Summary of extremes and goodness of fit are available in tabs along top.")	
@@ -87,16 +87,7 @@ fluidPage(
 
         	h2("A Test of H2"),
         	p("some text"),
-        	htmlOutput("gof_scatterchart_new"),
-        	googleScatterChart('gof_scatterchart_old', width='100%', height='500px',
-        	options = list(
-				hAxis = list(
-        		title = "Health expenditure, per capita ($USD)"
-      			),
-      			explorer = list()
-			)
-			),
-        	plotOutput("DistribPlot")
+        	htmlOutput("gof_scatter")
         	       
         
         )
