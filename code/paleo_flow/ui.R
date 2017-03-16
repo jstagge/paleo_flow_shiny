@@ -87,8 +87,13 @@ fluidPage(
 
         	h2("A Test of H2"),
         	p("some text"),
-        	htmlOutput("gof_scatter")
-        	       
+        	htmlOutput("gof_scatter"),
+        	#tableOutput('gof_table'),
+        	DT::dataTableOutput("gof_table"),
+        	
+        	
+        	
+        	plotOutput("gof_distr")        	       
         
         )
       
