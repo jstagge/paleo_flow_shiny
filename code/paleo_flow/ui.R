@@ -1,8 +1,18 @@
+
+###########################################################################
+###  Load functions
+###########################################################################
+#devtools::install_github("jcheng5/googleCharts")
+library(googleCharts)
+
+
+
 fluidPage(
   # Application title and theme
   theme = shinytheme("sandstone"),
   titlePanel("Reconstructed Streamflow Explorer"),
-  
+  # This line loads the Google Charts JS library
+	googleChartsInit(),
 ###########################################################################
 ## Sidebar panel
 ###########################################################################  
@@ -48,7 +58,7 @@ fluidPage(
 ## Time Series Tab
 ###########################################################################     
         tabPanel("Time Series", 
-        
+        	
         	dygraphOutput("tsPlot"),
         	br(),
         	br(),
@@ -73,7 +83,19 @@ fluidPage(
 ## Goodness of Fit Tab
 ###########################################################################          
         tabPanel("Goodness of Fit", 
-        	tags$p("Place Holder"),
+        
+
+        	h2("A Test of H2"),
+        	p("some text"),
+        	htmlOutput("gof_scatterchart_new"),
+        	googleScatterChart('gof_scatterchart_old', width='100%', height='500px',
+        	options = list(
+				hAxis = list(
+        		title = "Health expenditure, per capita ($USD)"
+      			),
+      			explorer = list()
+			)
+			),
         	plotOutput("DistribPlot")
         	       
         

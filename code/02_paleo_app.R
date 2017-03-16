@@ -47,9 +47,21 @@ require(colorout)
 require(assertthat)
 require(reshape2)
 
+
+#devtools::install_github("jcheng5/googleCharts")
+
 ### Load these functions for this unique project
 require(shiny)
 require(rsconnect)
+require(googleCharts)
+require(ggplot2)
+require(googleVis)
+require(shiny)
+library(dygraphs)
+library(datasets)
+require(shinythemes)
+require(lubridate)
+require(xts)
 
 ###########################################################################
 ## Set Initial Values

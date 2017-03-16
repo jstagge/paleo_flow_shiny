@@ -74,7 +74,7 @@ flow_units <- reactive({ input$flow_units })
 
 		
 ### Extract time series
-paleo_ts <- reactive({
+paleo_ts_temp <- reactive({
 	if (list_id()=="None"){
 		### Generate a blank graph
 		paleo_ts_temp <- data.frame(Observed=rep(NA,300), Annual_Recon=rep(NA,300), Monthly_Recon=rep(NA,300))
@@ -106,32 +106,51 @@ paleo_ts <- reactive({
 		### Convert to ac-ft per month
 		paleo_ts_temp <- paleo_ts_temp * 60*60*24*days_in_month(year_month)
 		}
-		
-		### Remove the monthly and annual columns before plotting
-		paleo_ts_temp <- paleo_ts_temp[ ,!(colnames(paleo_ts_temp) %in% c("Month", "Year"))]
+	paleo_ts_temp
+	}
+})
 
-		
+
+paleo_ts_dates <- reactive({
+	paste0("", paleo_ts_temp()$Month, " / ", paleo_ts_temp()$Year, "")
+})
+
+paleo_ts <- reactive({
+		### Remove the monthly and annual columns before plotting
+		paleo_ts_temp <- paleo_ts_temp()[ ,!(colnames(paleo_ts_temp()) %in% c("Month", "Year"))]
 		### Return time series for plot
 	paleo_ts_temp
-
-	}
 })
 
 
 ### Calculate the maximum flow
 y_lims <- reactive({ 
 	max_y <- max(c(paleo_ts()), na.rm=TRUE)
-	max_y <- 1.1*ceiling(max_y)
+	max_y <- 1.1*max_y
 	c(0,max_y) 
 	})
 
 
-
+gof_df <- reactive({
+	### Test if there are values
+  	if(max(paleo_ts()$Observed, na.rm=TRUE) > 0) {
+  		### Create dataframe
+  		gof_df <- data.frame(paleo_ts())
+  		gof_df <- data.frame(Observed=gof_df$Observed, Reconstructed=gof_df$Monthly_Rec)
+  		gof_df$Reconstructed.tooltip <- paste0("<b>", paleo_ts_dates(),"</b><br>Observed: ", round(gof_df$Observed,2),"<br>Reconstructed: ", round(gof_df$Reconstructed,2), " <span style='display:inline-block; width: 5;'></span>" )
+  		#,gof_df$Observed,"<br>Reconstructed: ",gof_df$Reconstructed) 
+ #paste0("Date: ", paleo_ts_dates())
+  	  	gof_df$abline <- NA
+  	  	gof_df <- rbind(gof_df, data.frame(Observed=y_lims(), Reconstructed=c(NA, NA), Reconstructed.tooltip=c("", ""), abline=y_lims()))
+  	  	gof_df
+  	  	}		
+	})
+	
 ###########################################################################
 ## Output to extremes tab
 ########################################################################### 
    output$site_out <- renderPrint({
-    y_lims()
+   gof_df()
     
   })
 
@@ -173,8 +192,44 @@ y_lims <- reactive({
   		p
    })	
      
+     
+ # output$gof_scatterchart_new <- renderGvis({
+ #   gvisScatterChart(gof_df(), options=list(width='100%', height='500px'))
+ # })
+ 
+ output$gof_scatterchart_new <- renderGvis({
+	gvisComboChart(gof_df(), xvar = "Observed", yvar = c("Reconstructed", "Reconstructed.tooltip", "abline"),
+          options=list(seriesType='scatter',
+ 			series='{1: {type:\"line\"}}',
+            explorer="{actions: ['dragToZoom' , 'rightClickToReset'], maxZoomIn:0.05}",
+            legend="none",
+            tooltip="{isHtml:'True'}",                                                                 
+            vAxis="{title:'Reconstructed Flow'}",                        
+            hAxis="{title:'Observed Flow'}",                     
+            width='100%', height=500))
+                       
+  })
+     
+        
+  output$gof_scatterchart_old <- reactive({
+		
+  		list(
+    	  data = googleDataTable( gof_df() ),
+      	  options = list(
+        	title = "fdasf"
+    	  )
+    	)
+  })
+  #output$gof_scatterchart <- reactive({
+  	#gof_df <- data.frame(paleo_ts())
+  	#gof_df <- gof_df[,c("Observed", "Monthly_Rec")]
+  	#gof_df <- as.matrix(gof_df)
   
-  
+    # Return the data and options
+    #list(
+    #  data = googleDataTable(gof_df)
+    #)
+  #})
   
   
 }
