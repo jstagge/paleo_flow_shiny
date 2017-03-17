@@ -21,6 +21,9 @@ file_name_subset <- subset(file_name, resolution==res)
 ### Extract site_groups
 site_group_list <- as.character(unique(file_name_subset$site_group))
 
+site_list <- list()
+site_list[[1]] <- c("Select site location"='')
+
 ### Loop through site_groups and create a unique list for each
 for (n in seq(1, length(site_group_list))) {
 	### Test for the group
@@ -31,16 +34,17 @@ for (n in seq(1, length(site_group_list))) {
 	names(site_list_temp) <- file_name_subset$site_name[group_test]
 	
 	### Add to the longer list
-	if (n ==1) {
-		site_list <- list()
-		site_list[[n]] <- site_list_temp
-	} else {
-		site_list[[n]] <- site_list_temp
-	}
+	site_list[[(n+1)]] <- site_list_temp
+	#if (n ==1) {
+		
+	#	site_list[[(n+1)]] <- site_list_temp
+	#} else {
+	#	site_list[[(n+1)]] <- site_list_temp
+	#}
 } 
 
 ### Name the groups in the full list
-names(site_list) <- site_group_list
+names(site_list) <- c(as.character("NA"), site_group_list)
 	
 return(site_list)
 }

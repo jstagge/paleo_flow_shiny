@@ -20,16 +20,16 @@ fluidPage(
   # Sidebar with a slider and selection inputs  
     sidebarPanel(
     	### Input for time resolution
-		selectInput('time_resolution', 'Time Resolution', 
+		selectizeInput('time_resolution', 'Time Resolution', 
 			choices = c(`Monthly` = 'monthly', `Annual` = 'annual'),
-			multiple = FALSE,
-			selectize = TRUE), 
+			multiple = FALSE), 
 
 		### Input for site location
  		selectizeInput('site_name', 'Site Location', 
- 			choices = create_site_list(site_all, res = "monthly"),
+ 			choices =  create_site_list(site_all, res = "monthly"),
+    		selected = NULL,
     		multiple = FALSE,
-        	options = list(
+    		options = list(
           		placeholder = 'Select site location.'
         	) ),     
  

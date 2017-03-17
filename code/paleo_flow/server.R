@@ -47,21 +47,9 @@ site_annual$resolution <- "annual"
 site_all <- rbind(site_monthly, site_annual)
 site_all <- data.frame(list_id=seq(1,dim(site_all)[1]), site_all)
 
-###########################################################################
-## Dynamic Input for Sites
-###########################################################################
- observe({
-    x <- input$time_resolution
-
-	choice_list <- 
-    # Can also set the label and select items
-    updateSelectizeInput(session, "site_name", "Site Location",
-      	choices = create_site_list(site_all, res=x)
-		)
-  })
 
 ###########################################################################
-## Dynamic Input for Date Subset
+## Dynamic Input for Date Subset and Sites
 ###########################################################################
  observe({
     x <- input$time_resolution
@@ -79,6 +67,12 @@ site_all <- data.frame(list_id=seq(1,dim(site_all)[1]), site_all)
       	choices = c(`Full Timeseries` = '0', `January` = '1', `February` = '2', `March` = '3', `April` = '4', `May` = '5', `June` = '6', `July` = '7', `August` = '8', `September` = '9', `October` = '10', `November` = '11', `December` = '12' )
 		)
     }
+    
+ 	choice_list <- 
+    # Can also set the label and select items
+    updateSelectizeInput(session, "site_name", "Site Location",
+      	choices = create_site_list(site_all, res=x)
+		)   
   })
 
 ###########################################################################
