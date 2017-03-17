@@ -27,10 +27,10 @@ fluidPage(
 
 		### Input for site location
  		selectizeInput('site_name', 'Site Location', 
- 			choices = list('Utah, USA' = c(`Logan River` = '10109001', `Bear River near Utah-Wyo` = '10011500'), Other = c(`...` = 'NA')),
+ 			choices = create_site_list(site_monthly),
     		multiple = FALSE,
         	options = list(
-          		placeholder = 'Please select a site below',
+          		placeholder = 'Select site location.',
           		onInitialize = I('function() { this.setValue(""); }')
         	) ),     
  
