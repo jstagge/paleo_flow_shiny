@@ -41,9 +41,7 @@ fluidPage(
 		### Input for units
 		selectizeInput('flow_units', 'Flow Units', 
 			choices = c(`Mean m3/s` = 'm3/s', `Mean ft3/s` = 'cfs', `Total acre-ft` = 'ac-ft'),
-			multiple = FALSE),  
-		br(),
-      		helpText("Summary of extremes and goodness of fit are available in tabs along top.")	
+			multiple = FALSE)	
     
     ),
 
@@ -57,17 +55,27 @@ fluidPage(
 ###########################################################################
 ## Time Series Tab
 ###########################################################################     
-        tabPanel("Time Series", 
+        tabPanel("Overview", 
         	
+        	h2("Reconstructed Time Series Overview"),
+        	p("Please select a temporal resolution (Annual or Monthly) and a site on the left to view a reconstructed time series. For monthly reconstructions, it is possible to focus on particular months. These selections will populate the other tabs."),
+        	br(),
         	dygraphOutput("tsPlot"),
         	br(),
-        	br(),
+        	helpText("Plots are dynamic. Click and drag within the time series to zoom or use the scroll bar at the bottom. Double-click on the graph to zoom out."),
+        	hr(),
+        	h2("Reconstruction Source"),
             ### Text information          
-			tags$div(class="header", checked=NA,
-        	tags$p("Reconstructions based on Stagge et al. (2017). Data is based on USGS gauges at the ", tags$a(href="https://waterdata.usgs.gov/usa/nwis/uv?site_no=10109000", "Logan River"), " and the ", tags$a(href="https://waterdata.usgs.gov/usa/nwis/uv?site_no=10011500", "Bear River"))
-	  		), 
-      		br(),
-      		helpText("Click and drag within the timeseries to zoom in or use the scroll bar at the bottom to explore. Double click within graph to zoom out to entire reconstruction.")		
+			h4(htmlOutput("recon_name_text")),
+			h4(htmlOutput("recon_author_text")),
+			h4(htmlOutput("recon_link_text")),
+			h4(tags$strong("Recommended Citation:"), textOutput("recon_citation_text")),
+			br(),
+        	h2("Observation Source"),
+            ### Text information   
+            h4(htmlOutput("base_name_text")),
+			h4(htmlOutput("base_author_text")),
+			h4(htmlOutput("base_link_text"))		
         
         ),
         
@@ -95,7 +103,25 @@ fluidPage(
         	
         	plotOutput("gof_distr")        	       
         
-        )
+        ),
+        
+###########################################################################
+## About Tab
+###########################################################################           
+        tabPanel("About",  
+        	h2("About"),
+        	p("The Reconstructed Streamflow Explorer was developed by James Stagge, in conjunction with the Utah State University Water Lab. It was funded in part by Utah Mineral Lease funds"),
+        	br(),
+        	br(),
+        	h3("Citation"),
+        	p("When using the Reconstructed Streamflow Explorer for research or background, please cite as follows:"),
+        	p("Stagge, J.H. (2017) Reconstructed Streamflow Explorer. www.com"),
+        	br(),
+        	br(),
+        	h3("Contact Information"),
+        	tags$p("Please direct any questions to ", tags$a(href="mailto:james.stagge@usu.edu", "James Stagge"), ".")
+        
+        )         
       
       )
     )

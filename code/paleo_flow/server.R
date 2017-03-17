@@ -114,6 +114,26 @@ site_info <- reactive({
 ### Extract Site Name
 site_name <- reactive({ site_info()$site_name })
 
+###########################################################################
+## Extract citation information
+###########################################################################
+### For reconstruction
+output$recon_name_text <- renderUI({ HTML(paste0("<strong>Name</strong> :   ",site_info()$recon_name)) })
+
+output$recon_author_text <- renderUI({ HTML(paste0("<strong>Author/Originator(s)</strong> :   ",site_info()$recon_originator)) })
+
+output$recon_link_text <- renderUI({ HTML(paste0('<strong>Source Link </strong> :   <a href="',site_info()$recon_link, '">',site_info()$recon_link,'</a>')) })
+
+output$recon_citation_text <- renderText({site_info()$recon_citation})
+
+### For base data
+output$base_name_text <- renderUI({ HTML(paste0("<strong>Name</strong> :   ",site_info()$base_name)) })
+
+output$base_author_text <- renderUI({ HTML(paste0("<strong>Author/Originator(s)</strong> :   ",site_info()$base_originator)) })
+
+output$base_link_text <- renderUI({ HTML(paste0('<strong>Source Link </strong> :   <a href="',site_info()$base_link, '">',site_info()$base_link,'</a>')) })
+
+
 
 ###########################################################################
 ## Process the time series, keep date columns for later
