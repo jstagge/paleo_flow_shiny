@@ -154,7 +154,7 @@ paleo_ts_temp <- reactive({
 		### Create date vector and apply to time series
 		date_vec <- as.POSIXct(paste0(paleo_ts_temp$Year,"/",paleo_ts_temp$Month, "/15"), format="%Y/%m/%d")
 		paleo_ts_temp <- xts(paleo_ts_temp, date_vec)
-		
+
 		### If it is not a full time series, subset it and NA out the annual timeseries
 		if (subset_input() > 0) {
 			paleo_ts_temp <- subset(paleo_ts_temp, Month==subset_input())
@@ -172,6 +172,10 @@ paleo_ts_dates <- reactive({
 	paste0("", paleo_ts_temp()$Month, " / ", paleo_ts_temp()$Year, "")
 })
 
+year_month <- reactive({
+		year_month <- as.Date(paste0(as.numeric(paleo_ts_temp()$Year),"-", as.numeric(paleo_ts_temp()$Month),"-15"))
+})
+
 ###########################################################################
 ## Process the time series for plotting, remove date columns and convert units
 ###########################################################################
@@ -184,13 +188,12 @@ paleo_ts <- reactive({
 		paleo_ts_temp <- paleo_ts_temp * 35.31467
 		}
 		if (flow_units() == "ac-ft"){
-		year_month <- as.Date(paste0(paleo_ts_temp$Year,"-", paleo_ts_temp$Month,"-15"))
 		## Convert to cfs
 		paleo_ts_temp <- paleo_ts_temp * 35.31467
 		### Convert to ac-ft per second
 		paleo_ts_temp <- paleo_ts_temp * (1/43560)
 		### Convert to ac-ft per month
-		paleo_ts_temp <- paleo_ts_temp * 60*60*24*days_in_month(year_month)
+		paleo_ts_temp <- paleo_ts_temp * 60*60*24*days_in_month(year_month())
 		}
 		### Return time series for plot
 	paleo_ts_temp
@@ -209,7 +212,6 @@ y_lims <- reactive({
 ###########################################################################
 ## Produce a dataframe holding observed and reconstructed values
 ###########################################################################
-
 gof_df_temp <- reactive({
 	### Test if there are values
   	if(max(paleo_ts()$Observed, na.rm=TRUE) > 0) {
@@ -263,31 +265,44 @@ gof_distr_df <- reactive({
 	
 gof_table_df <- reactive({
 	### Calculate goodness of fit statistics for entire time series
- 		gof_table_df <- gof_ts(gof_df_temp()$Reconstructed, gof_df_temp()$Observed)
+ 	gof_table_df <- gof_ts(gof_df_temp()$Reconstructed, gof_df_temp()$Observed)
+ 	
+ 	### If Date subset is something other than the full period
+ 	### Calculate goodness of fit statistics for that month also
+ 	if (subset_input() > 0) {
+#		month_subset <- subset(gof_df_temp(), Month==subset_input())
+# 		gof_table_df <- rbind(gof_table_df, gof_ts(month_subset$Reconstructed, month_subset$Observed))
  		
- 	### Calculate goodness of fit statistics for each month
- 	for (j in seq(1,12)) {
- 		month_subset <- subset(gof_df_temp(), Month==j)
- 		gof_table_df <- rbind(gof_table_df, gof_ts(month_subset$Reconstructed, month_subset$Observed))
- 	}
-
-# 	gof_table_df <- as.numeric(gof_table_df)
- 	gof_table_df <- apply(gof_table_df,2, as.numeric)
- 	
- 	month_names <- format(ISOdatetime(2000,1:12,1,0,0,0),"%b")
-# 	as.character(c("Full", seq(1:12)))
- 	gof_table_df <- data.frame(Period=c("Full", seq(1:12)), gof_table_df)
- 	
- 	gof_table_df <- signif_df(gof_table_df,3)
- 	
- 		gof_table_df
+ 		### Make all columns numeric
+# 		gof_table_df <- apply(gof_table_df,2, as.numeric)
+# 		gof_table_df <- signif_df(gof_table_df,3)
+ 		
+ 		### Determine month name and create dataframe
+ 		period_name <- format(ISOdatetime(2000,subset_input(),1,0,0,0),"%b")
+	} else {
+		period_name <- "Full"
+	}
+# 	} else {
+ 		### Make all columns numeric
+ 		gof_table_df <- data.frame(gof_table_df)
+ 		gof_table_df <- signif_df(gof_table_df,3)
+# 		gof_table_df <- apply(gof_table_df,2, as.numeric)
+ 		### Create Data frame
+ 		gof_table_df <- data.frame(Period=period_name, gof_table_df)
+ #	}
+ 		### Cut the extraneous columns out
+ 		gof_table_df <- gof_table_df[ , !(names(gof_table_df) %in% c("MAE", "R.spear"))]
+ 		### Rename Columns
+ 		names(gof_table_df) <- c("Period", "Mean Error", "Root Mean Sq Error (RMSE)", "Nash-Sutcliffe Eff", "Pearson Corr (R)")
+ 
+ 	gof_table_df
 	})	
 
 ###########################################################################
 ## Output to extremes tab
 ########################################################################### 
    output$site_out <- renderPrint({
-   site_monthly
+   paleo_ts_temp_full()
     
   })
 
@@ -313,7 +328,7 @@ gof_table_df <- reactive({
  output$gof_scatter <- renderGvis({
 	gvisComboChart(gof_df(), xvar = "Observed", yvar = c("Reconstructed", "Reconstructed.tooltip", "abline"),
           options=list(seriesType='scatter',
- 			title="Observed vs. Reconstructed Flow",
+ 			title=NULL,
  			series='{1: {type:\"line\"}}',
             explorer="{actions: ['dragToZoom' , 'rightClickToReset'], maxZoomIn:0.05}",
             legend="none",
@@ -346,9 +361,9 @@ gof_table_df <- reactive({
 ###########################################################################
 ## Output gof to a table
 ###########################################################################   
-#output$gof_table <-renderTable({
-#    gof_table_df()
-#  })
+output$gof_table_simple <-renderTable({
+    gof_table_df()
+  }, digits=3)
 
   output$gof_table <- DT::renderDataTable({
    DT::datatable(gof_table_df(), plugins='natural', rownames=FALSE, 

@@ -83,24 +83,37 @@ fluidPage(
 ## Extremes Tab
 ###########################################################################           
         tabPanel("Extremes",  
-        	verbatimTextOutput('site_out')      
-        
+        	verbatimTextOutput('site_out')
         ), 
-        
+
+###########################################################################
+## Period Comparison Tab
+###########################################################################           
+        tabPanel("Period Comparison",  
+        	h2("Period Comparison"),
+        	p("Coming Soon.")   
+        ), 
+                
 ###########################################################################
 ## Goodness of Fit Tab
 ###########################################################################          
-        tabPanel("Goodness of Fit", 
-        
+        tabPanel("Goodness of Fit",       
 
-        	h2("A Test of H2"),
-        	p("some text"),
+        	h2("Goodness of Fit"),
+			h3("Summary Statistics"),
+        	p("Reconstructed flows are compared against observed flows at the site during the instrumental period"),
+			tableOutput('gof_table_simple'),
+        	helpText("Fit criteria are: ME (Mean error), RSME (Root Mean Square Error), NSE (Nash-Sutcliffe Efficiency), and R (Pearson Correlation Coefficient). "),        	        	
+	       	h3("Observed vs. Reconstructed Flow"),
         	htmlOutput("gof_scatter"),
+        	br(),
+        	helpText("Hover over a point to see its date and values. Click and drag to zoom in on an area. Right click to zoom out."),
+
         	#tableOutput('gof_table'),
-        	DT::dataTableOutput("gof_table"),
+        	#DT::dataTableOutput("gof_table"),
         	
         	
-        	
+        	h3("Comparison of Flow Distributions"),
         	plotOutput("gof_distr")        	       
         
         ),
@@ -116,6 +129,8 @@ fluidPage(
         	h3("Citation"),
         	p("When using the Reconstructed Streamflow Explorer for research or background, please cite as follows:"),
         	p("Stagge, J.H. (2017) Reconstructed Streamflow Explorer. www.com"),
+        	br(),
+            tags$p("All code for the Reconstructed Streamflow Explorer is available open source on GitHub. Feel free to contribute to this project there: ", tags$a(href="https://github.com/jstagge/paleo_flow_shiny", "https://github.com/jstagge/paleo_flow_shiny"), ".")	,
         	br(),
         	br(),
         	h3("Contact Information"),
