@@ -56,7 +56,7 @@ site_all <- data.frame(list_id=seq(1,dim(site_all)[1]), site_all)
 	choice_list <- 
     # Can also set the label and select items
     updateSelectizeInput(session, "site_name", "Site Location",
-      	choices = create_site_list(site_all, res=x)
+      	choices = create_site_list(site_all, res==x)
 		)
   })
 
@@ -133,7 +133,7 @@ paleo_ts_temp <- reactive({
 	} else {
 		### Read time series from list 
 		paleo_ts_location <- file.path(data_path, site_info()$resolution)
-		paleo_ts_location <- file.path(paleo_ts_location, paste0("flow_",site_info()$site_id,".csv"))
+		paleo_ts_location <- file.path(paleo_ts_location, paste0("flow_",site_id,".csv"))
 		paleo_ts_temp <- read.csv(paleo_ts_location) 
 		#paleo_ts_temp <- paleo_list[[list_id()]]$flow_ts
 		

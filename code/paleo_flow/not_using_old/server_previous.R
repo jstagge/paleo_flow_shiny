@@ -39,13 +39,23 @@ site_annual <- read.table(file.path(data_path, "sites_annual.txt"), sep="\t", he
 site_monthly <- site_monthly[order(site_monthly$site_group, site_monthly$site_name),] 
 site_annual <- site_annual[order(site_annual$site_group, site_annual$site_name),] 
 
-### Add resolution so can subset later
-site_monthly$resolution <- "monthly"
-site_annual$resolution <- "annual"
+###########################################################################
+## Read in data in background (so it doesn't have to be read every time)
+###########################################################################
+### Set initial values
+#site_id_list <- c("10109001", "10011500")
+#site_name_list <- c("Logan River", "Bear River near Utah-Wyo")
 
-### Combine to create single lookup table with ids
-site_all <- rbind(site_monthly, site_annual)
-site_all <- data.frame(list_id=seq(1,dim(site_all)[1]), site_all)
+### Read in monthly and annual
+monthly_paleo_list <- read_in_paleo(site_id_list=site_monthly$site_id, site_name_list=site_monthly$site_name, path=file.path(data_path, "monthly"))
+annual_paleo_list <- read_in_paleo(site_id_list=site_annual$site_id, site_name_list=site_annual$site_name, path=file.path(data_path, "annual"))
+
+### Read in data
+paleo_list <- read_in_paleo(site_id_list=site_id_list, site_name_list=site_name_list, path=file.path(data_path, "monthly"))
+
+
+monthly_paleo_list <- read_in_paleo(site_id_list=site_monthly$site_id, site_name_list=site_monthly$site_name, path=file.path(data_path, "monthly"))
+
 
 ###########################################################################
 ## Dynamic Input for Sites
@@ -53,12 +63,23 @@ site_all <- data.frame(list_id=seq(1,dim(site_all)[1]), site_all)
  observe({
     x <- input$time_resolution
 
-	choice_list <- 
+    if (x == "annual"){
+		choice_list <- 
     # Can also set the label and select items
     updateSelectizeInput(session, "site_name", "Site Location",
-      	choices = create_site_list(site_all, res=x)
+      	choices = create_site_list(site_annual)
 		)
+    }
+    
+    if (x == "monthly"){
+    # Can also set the label and select items
+    updateSelectizeInput(session, "time_subset", "Date Subset",
+      	choices = create_site_list(site_monthly)
+		)
+    }
   })
+
+
 
 ###########################################################################
 ## Dynamic Input for Date Subset
@@ -81,6 +102,31 @@ site_all <- data.frame(list_id=seq(1,dim(site_all)[1]), site_all)
     }
   })
 
+
+
+
+###########################################################################
+## Determine the site
+###########################################################################
+### Determine which one of the read in time series from the number
+list_id <- reactive({ 
+	list_id_temp <- which(input$site_name == site_id_list)
+	if (length(list_id_temp) == 1) {
+		list_id_temp
+	} else {
+		"None"
+	}
+})
+
+### Extract Site Name
+site_name <- reactive({
+	if (list_id()=="None"){
+		"Please Select Site"
+	} else {
+		paleo_list[[list_id()]]$site_name
+	}
+})
+
 ###########################################################################
 ## Extract the subset information and flow units
 ###########################################################################
@@ -89,38 +135,7 @@ subset_input <- reactive({ as.numeric(input$time_subset) })
 ### Extract the flow units
 flow_units <- reactive({ input$flow_units })
 
-### Extract time resolution
-time_resolution <- reactive({input$time_resolution})
-
-
-###########################################################################
-## Determine site information
-###########################################################################
-### Determine which one of the read in time series from the number
-list_id <- reactive({ 
-	if (input$site_name == "") {
-		"None"
-	} else {
-		input$site_name
-	}
-})
-
-### Extract Site Info
-site_info <- reactive({
-	if (list_id()=="None"){
-		blank_site <- site_all[1,]
-		blank_site[1,seq(1,length(blank_site))] <- NA
-		blank_site$site_name <- "Please Select Site"
-		blank_site
-	} else {
-		site_all[list_id(),]
-	}
-})
-
-### Extract Site Name
-site_name <- reactive({ site_info()$site_name })
-
-
+		
 ###########################################################################
 ## Process the time series, keep date columns for later
 ###########################################################################
@@ -132,10 +147,7 @@ paleo_ts_temp <- reactive({
 		ts(as.matrix(paleo_ts_temp), start=c(1700,1), frequency=12)
 	} else {
 		### Read time series from list 
-		paleo_ts_location <- file.path(data_path, site_info()$resolution)
-		paleo_ts_location <- file.path(paleo_ts_location, paste0("flow_",site_info()$site_id,".csv"))
-		paleo_ts_temp <- read.csv(paleo_ts_location) 
-		#paleo_ts_temp <- paleo_list[[list_id()]]$flow_ts
+		paleo_ts_temp <- paleo_list[[list_id()]]$flow_ts
 		
 		### Create date vector and apply to time series
 		date_vec <- as.POSIXct(paste0(paleo_ts_temp$Year,"/",paleo_ts_temp$Month, "/15"), format="%Y/%m/%d")

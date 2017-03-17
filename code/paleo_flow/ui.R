@@ -1,4 +1,3 @@
-
 ###########################################################################
 ###  Load functions
 ###########################################################################
@@ -21,17 +20,17 @@ fluidPage(
   # Sidebar with a slider and selection inputs  
     sidebarPanel(
     	### Input for time resolution
-		selectizeInput('time_resolution', 'Time Resolution', 
+		selectInput('time_resolution', 'Time Resolution', 
 			choices = c(`Monthly` = 'monthly', `Annual` = 'annual'),
-			multiple = FALSE), 
+			multiple = FALSE,
+			selectize = TRUE), 
 
 		### Input for site location
  		selectizeInput('site_name', 'Site Location', 
- 			choices = create_site_list(site_monthly),
+ 			choices = create_site_list(site_all, res = "monthly"),
     		multiple = FALSE,
         	options = list(
-          		placeholder = 'Select site location.',
-          		onInitialize = I('function() { this.setValue(""); }')
+          		placeholder = 'Select site location.'
         	) ),     
  
    		### Input for subset
