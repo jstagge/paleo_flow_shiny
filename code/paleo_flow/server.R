@@ -63,23 +63,23 @@ site_name <- reactive({
 })
 
 ###########################################################################
-## Attempt at dynamic inputs
+## Dynamic Input for Date Subset
 ###########################################################################
  observe({
     x <- input$time_resolution
 
     if (x == "annual"){
     # Can also set the label and select items
-    updateSelectInput(session, "inSelect","Select Input",
-      c("Item D", "Item E", "Item F")
-    )
+    updateSelectInput(session, "time_subset", "Date Subset",
+      	choices = c(`Annual` = '0')
+		)
     }
     
     if (x == "monthly"){
     # Can also set the label and select items
-    updateSelectInput(session, "inSelect", "Select Input",
-      c("Item A", "Item B", "Item C")
-    )
+    updateSelectizeInput(session, "time_subset", "Date Subset",
+      	choices = c(`Full Timeseries` = '0', `January` = '1', `February` = '2', `March` = '3', `April` = '4', `May` = '5', `June` = '6', `July` = '7', `August` = '8', `September` = '9', `October` = '10', `November` = '11', `December` = '12' )
+		)
     }
   })
 
