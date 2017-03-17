@@ -1,4 +1,4 @@
-function(input, output) {
+function(input, output, session) {
 
 ###########################################################################
 ## Set the Paths
@@ -61,6 +61,28 @@ site_name <- reactive({
 		paleo_list[[list_id()]]$site_name
 	}
 })
+
+###########################################################################
+## Attempt at dynamic inputs
+###########################################################################
+ observe({
+    x <- input$time_resolution
+
+    if (x == "annual"){
+    # Can also set the label and select items
+    updateSelectInput(session, "inSelect","Select Input",
+      c("Item D", "Item E", "Item F")
+    )
+    }
+    
+    if (x == "monthly"){
+    # Can also set the label and select items
+    updateSelectInput(session, "inSelect", "Select Input",
+      c("Item A", "Item B", "Item C")
+    )
+    }
+  })
+
 
 ###########################################################################
 ## Extract the subset information and flow units

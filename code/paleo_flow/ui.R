@@ -21,7 +21,7 @@ fluidPage(
     sidebarPanel(
     	### Input for time resolution
 		selectizeInput('time_resolution', 'Resolution', 
-			choices = c(`Monthly` = 'monthly'),
+			choices = c(`Monthly` = 'monthly', `Annual` = 'annual'),
 			multiple = FALSE), 
 
 		### Input for site location
@@ -33,6 +33,10 @@ fluidPage(
           		onInitialize = I('function() { this.setValue(""); }')
         	) ),     
         
+       ### A test select 
+       selectizeInput("inSelect", "Select input",
+    		c("Item A", "Item B", "Item C")),
+    
    		### Input for subset
  		selectizeInput('time_subset', 'Date Subset', 
  			choices = c(`Full Timeseries` = '0', `January` = '1', `February` = '2', `March` = '3', `April` = '4', `May` = '5', `June` = '6', `July` = '7', `August` = '8', `September` = '9', `October` = '10', `November` = '11', `December` = '12' ),
