@@ -43,7 +43,7 @@ rm(list=ls())
 ###  Load functions
 ###########################################################################
 ### Load these functions for all code
-require(colorout)
+#require(colorout)
 require(assertthat)
 require(reshape2)
 

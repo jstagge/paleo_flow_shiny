@@ -1,11 +1,3 @@
-###########################################################################
-###  Load functions
-###########################################################################
-#devtools::install_github("jcheng5/googleCharts")
-library(googleCharts)
-require(shiny)
-require(shinythemes)
-
 
 fluidPage(
   # Application title and theme
