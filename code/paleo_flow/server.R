@@ -302,6 +302,35 @@ sliderInput("extreme_flow", label = "Extreme flow", min = 0,
 
 
 ###########################################################################
+## Create the periods input
+###########################################################################
+current_year <-  as.integer(format(Sys.Date(), "%Y"))
+
+first_year <- reactive({ min(paleo_ts_subset()$Year, na.rm=TRUE) })
+last_year <- reactive({ max(paleo_ts_subset()$Year, na.rm=TRUE) })
+
+rec_slider_2_start <- reactive({ceiling(first_year()/100)*100} )
+
+### Create the Period 1 input slider
+output$period_slider_1 <- renderUI({
+sliderInput("period_slider_1", label = "Period 1", min = first_year(), 
+        max = last_year(), value = c(1900,2000), sep = "")
+})        
+
+
+#output$period_slider2 <- renderUI({
+#    sliderInput("period_slider_2", label = "Period 2", min = first_year(), 
+#        max = last_year(), value = c(recommended_slider_2_start(), recommended_slider_2_start() + diff(input$slider1)), sep="")  
+#  })
+  
+  
+### Create the Period 1 input slider
+output$period_slider_2 <- reactiveUI(function() {
+sliderInput("period_slider_2", label = "Period 2 (years)", min = first_year(), 
+        max = last_year(), value = c(rec_slider_2_start(),rec_slider_2_start()+diff(input$period_slider_1)), sep = "")
+})      
+
+###########################################################################
 ## Calculate extreme output
 ###########################################################################
 extremes_table <- reactive({ 
@@ -329,8 +358,7 @@ extremes_table <- reactive({
 ## Output to extremes tab
 ########################################################################### 
    output$site_out <- renderPrint({
-   extremes_table()
-    
+   paleo_ts_subset()
   })
 
 

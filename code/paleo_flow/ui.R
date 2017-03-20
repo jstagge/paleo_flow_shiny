@@ -14,6 +14,7 @@ fluidPage(
   sidebarLayout(
   # Sidebar with a slider and selection inputs  
     sidebarPanel(
+
     	### Input for time resolution
 		selectizeInput('time_resolution', 'Time Resolution', 
 			choices = c(`Monthly` = 'monthly', `Annual` = 'annual'),
@@ -53,11 +54,16 @@ fluidPage(
 		 # Less than or greater than input
   		selectInput("extreme_direction", "Threshold Direction",
     	choices = list("Less than (<)" = "lt", "Greater than (>)" = "gt"), 
-    	selected = 1),
-		
+    	selected = 1, width='60%'),		
 		### Input for threshold is calculated from server using percentiles
-		uiOutput("extreme_flow")
-		
+		uiOutput("extreme_flow"),
+		helpText("Choose a flow threshold and < or > to access Extremes tab."),
+			hr(),
+		h4("Period Comparison"),
+		### Input for Period sliders
+		uiOutput("period_slider_1")	,
+		uiOutput("period_slider_2"),
+		helpText("Choose two historical periods to compare. Period 2 will default to the same duration.")	
 )
 
     
