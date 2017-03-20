@@ -2,6 +2,9 @@
 fluidPage(
   # Application title and theme
   theme = shinytheme("sandstone"),
+  # Google Analytics script
+  tags$head(includeScript("google-analytics.js")),
+  # Title
   titlePanel("Reconstructed Streamflow Explorer"),
   # This line loads the Google Charts JS library
 	googleChartsInit(),
