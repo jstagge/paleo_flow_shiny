@@ -26,7 +26,7 @@ fluidPage(
     		selected = NULL,
     		multiple = FALSE,
     		options = list(
-          		placeholder = 'Select site location.'
+          		placeholder = 'Select site location'
         	)
         	),     
 
@@ -107,8 +107,20 @@ fluidPage(
 ## Extremes Tab
 ###########################################################################           
         tabPanel("Extremes",  
-        	DT::dataTableOutput("extreme_table"),
-        	verbatimTextOutput('site_out')
+	        h3("Extreme Flows"),
+			h5(htmlOutput("most_extreme_text")),
+			h5(htmlOutput("date_most_extreme_text")),
+			br(),
+			h5(htmlOutput("threshold_text")),
+			h5(htmlOutput("threshold_exceed_text")),
+			h5(htmlOutput("freq_threshold_exceed_text")),
+			h5(htmlOutput("return_per_text")),
+			br(),
+ 	        h3("Extreme Flow Distribution"),       	
+        	plotOutput("extreme_distr"),
+        	h3("Extreme Flow Details"), 
+       		helpText("Flows are sorted by most extreme. You may re-sort by clicking column headers. You may also change the period of interest using the Date Subset drop-down."),
+			DT::dataTableOutput("extreme_table")
         ), 
 
 ###########################################################################
@@ -116,7 +128,8 @@ fluidPage(
 ###########################################################################           
         tabPanel("Period Comparison",  
         	h2("Period Comparison"),
-        	p("Coming Soon.")   
+        	p("Coming Soon.")  ,	
+        	verbatimTextOutput('site_out')
         ), 
                 
 ###########################################################################

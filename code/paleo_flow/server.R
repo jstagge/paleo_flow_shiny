@@ -204,7 +204,7 @@ gof_df_temp <- reactive({
   	if(max(paleo_ts_subset()$Observed, na.rm=TRUE) > 0) {
   		### Create dataframe
   		gof_df <- data.frame(paleo_ts_subset())
-  		gof_df <- data.frame(Observed=gof_df$Observed, Reconstructed=gof_df$Monthly_Rec, Month=paleo_ts_temp()$Month, Year=paleo_ts_temp()$Year)
+  		gof_df <- data.frame(Observed=gof_df$Observed, Reconstructed=gof_df$Monthly_Rec, Month=paleo_ts_subset()$Month, Year=paleo_ts_subset()$Year)
 	
   	  	### Cut to common reference period
   	  	refer_test <- complete.cases(gof_df[,c("Observed","Reconstructed")])
@@ -281,6 +281,7 @@ gof_table_df <- reactive({
 ## Create the extremes input
 ###########################################################################
 ### Suggest the maximum flow in subset
+min_suggest <- reactive({ floor(min(paleo_ts_subset()$Monthly_Recon, na.rm=TRUE)) })
 max_suggest <- reactive({ ceiling(max(paleo_ts_subset()$Monthly_Recon, na.rm=TRUE)) })
 
 ### Suggest an extreme flow based on the 15th or 85 percentile (depending if gt or less than)
@@ -296,7 +297,7 @@ suggest_steps <- reactive({ signif(max_suggest()/200,1) })
 
 ### Create the extreme threshold input	
 output$extreme_flow <- renderUI({
-sliderInput("extreme_flow", label = "Extreme flow", min = 0, 
+sliderInput("extreme_flow", label = "Extreme flow", min = min_suggest(), 
         max = max_suggest(), value = suggest_extreme(), step = suggest_steps())
 })        
 
@@ -316,15 +317,8 @@ output$period_slider_1 <- renderUI({
 sliderInput("period_slider_1", label = "Period 1", min = first_year(), 
         max = last_year(), value = c(1900,2000), sep = "")
 })        
-
-
-#output$period_slider2 <- renderUI({
-#    sliderInput("period_slider_2", label = "Period 2", min = first_year(), 
-#        max = last_year(), value = c(recommended_slider_2_start(), recommended_slider_2_start() + diff(input$slider1)), sep="")  
-#  })
   
-  
-### Create the Period 1 input slider
+### Create the Period 2 input slider
 output$period_slider_2 <- reactiveUI(function() {
 sliderInput("period_slider_2", label = "Period 2 (years)", min = first_year(), 
         max = last_year(), value = c(rec_slider_2_start(),rec_slider_2_start()+diff(input$period_slider_1)), sep = "")
@@ -349,16 +343,40 @@ extremes_table <- reactive({
 			extremes_table <- data.frame(extremes_table)
 			extremes_table <- extremes_table[with(extremes_table, order(Monthly_Recon, Year)),]
 		}
+		
+	### Reorganize columns
+	date_column <- as.Date(paste0(extremes_table$Year, "/",extremes_table$Month, "/15"))
+	date_column <- format(date_column, "%b %Y")
+	extremes_table <- data.frame(Date=date_column, Year=extremes_table$Year, Month=extremes_table$Month, "Reconst_Flow"=signif(extremes_table$Monthly_Recon,4), Observed=signif(extremes_table$Observed,4))	
+		
 	### Return extremes table
 	extremes_table 
 })
+
+### Calculations for Extreme summary
+most_extreme <- reactive({extremes_table()$Reconst_Flow[1]})
+date_most_extreme <- reactive({as.character(extremes_table()$Date[1])})
+
+threshold_exceed <- reactive({dim(extremes_table())[1]})
+length_time_series <- reactive({sum(paleo_ts_subset()$Monthly_Rec > 0, na.rm=TRUE)})
+freq_threshold_exceed <- reactive({threshold_exceed()/length_time_series()})
+return_per <- reactive({1/freq_threshold_exceed()})
+
+### Output for Extreme summary
+output$threshold_text <- renderUI({ HTML(paste0("<strong>Threshold</strong> :   ",input$extreme_flow, " ", flow_units())) })
+output$most_extreme_text <- renderUI({ HTML(paste0("<strong>Most Extreme Flow</strong> :   ",most_extreme(), " ", flow_units())) })
+output$date_most_extreme_text <- renderUI({ HTML(paste0("<strong>Date of Most Extreme Flow</strong> :   ",date_most_extreme())) })
+output$threshold_exceed_text <- renderUI({ HTML(paste0("<strong>Threshold Exceedances</strong> :   ",threshold_exceed())) })
+output$freq_threshold_exceed_text <- renderUI({ HTML(paste0("<strong>Likelihood of Threshold Exceedance</strong> :   ",signif(100*freq_threshold_exceed(),3), " %")) })
+output$return_per_text <- renderUI({ HTML(paste0("<strong>Approximate (Empirical) Return Period</strong> :   ",signif(return_per(),2), " years")) })
+
 
 
 ###########################################################################
 ## Output to extremes tab
 ########################################################################### 
    output$site_out <- renderPrint({
-   paleo_ts_subset()
+   density_range()
   })
 
 
@@ -399,14 +417,22 @@ extremes_table <- reactive({
 ###########################################################################
 ## Output to distribution (Obs vs Reconstr) plot
 ###########################################################################   
+### create range for density plot
+	density_range <- reactive({
+		l <- density(gof_distr_df()$Flow, na.rm=TRUE)
+		range(l$x)
+	})
+	
  output$gof_distr <-renderPlot({
  		
  		### Create the plot
   		p <- ggplot(gof_distr_df(), aes(x=Flow, fill=Data))
   		p <- p + geom_density(alpha=0.3)
-  		p <- p + scale_fill_brewer(name="Data Source", palette="Dark2")
-  		p <- p + scale_x_continuous(name=paste0("Streamflow (",flow_units(),")"), expand=c(0,0))
-  		p <- p + scale_y_continuous(name="Density")
+  		#p <- p + scale_fill_brewer(name="Data Source", palette="Dark2")
+  		p <- p + scale_fill_manual(name="Data Source", values=c("#d95f02", "#1b9e77"))
+  		p <- p + scale_x_continuous(name=paste0("Streamflow (",flow_units(),")"))
+  		p <- p + scale_y_continuous(name="Density", expand=c(0,0))
+  		p <- p + xlim(density_range())
   		p <- p + theme_light()
   		p
    })	
@@ -420,10 +446,34 @@ output$gof_table_simple <-renderTable({
     gof_table_df()
   }, digits=3)
 
+
+
+
+###########################################################################
+## Output extreme table
+###########################################################################   
+
   output$extreme_table <- DT::renderDataTable({
    DT::datatable(extremes_table(), plugins='natural', rownames=FALSE, 
-    	options = list(pageLength = 13, dom='t', columnDefs = list(list(type = 'natural', targets = 0)) ))
+    	options = list(pageLength = 10, columnDefs = list(list(type = 'natural', targets = 0)) ))
   })
+
+
+###########################################################################
+## Output to distribution (Obs vs Reconstr) plot
+###########################################################################   
+ output$extreme_distr <-renderPlot({
+ 		### Create the plot
+  		p <- ggplot(gof_df_temp(), aes(x=Reconstructed))
+  		p <- p + geom_density(fill="#1b9e77", alpha=0.4)
+  		p <- p + geom_vline(xintercept = input$extreme_flow, colour="red", linetype="longdash")
+  		p <- p + scale_x_continuous(name=paste0("Streamflow (",flow_units(),")"))
+  		p <- p + scale_y_continuous(name="Density", expand=c(0,0))
+  		p <- p + xlim(density_range())
+  		p <- p + theme_light()
+  		p
+   })	
+
 
   
 }
