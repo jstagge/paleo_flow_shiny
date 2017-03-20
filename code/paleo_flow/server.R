@@ -27,6 +27,10 @@ function(input, output, session) {
 		)   
   })
 
+
+
+
+
 ###########################################################################
 ## Extract the subset information and flow units
 ###########################################################################
@@ -250,11 +254,32 @@ gof_table_df <- reactive({
  	gof_table_df
 	})	
 
+
+
+###########################################################################
+## Extract the subset information and flow units
+###########################################################################
+max_suggest <- reactive({ ceiling(max(paleo_ts()$Monthly_Recon, na.rm=TRUE)) })
+suggest_extreme <- reactive({ if (input$extreme_direction == "gt") {
+			quantile(paleo_ts()$Monthly_Recon, 0.15, na.rm=TRUE) 
+		} else {
+			quantile(paleo_ts()$Monthly_Recon, 0.85, na.rm=TRUE) 
+		}
+	})
+suggest_steps <- reactive({ signif(max_suggest()/200,1) })	
+	
+output$extreme_flow <- renderUI({
+sliderInput("extreme_flow", label = "Extreme flow", min = 0, 
+        max = max_suggest(), value = suggest_extreme(), step = suggest_steps())
+})        
+
+
+
 ###########################################################################
 ## Output to extremes tab
 ########################################################################### 
    output$site_out <- renderPrint({
-   paleo_ts_temp_full()
+   suggest_steps()
     
   })
 

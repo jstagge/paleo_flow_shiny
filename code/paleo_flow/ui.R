@@ -26,17 +26,40 @@ fluidPage(
     		multiple = FALSE,
     		options = list(
           		placeholder = 'Select site location.'
-        	) ),     
- 
-   		### Input for subset
- 		selectizeInput('time_subset', 'Date Subset', 
- 			choices = c(`Full Timeseries` = '0', `January` = '1', `February` = '2', `March` = '3', `April` = '4', `May` = '5', `June` = '6', `July` = '7', `August` = '8', `September` = '9', `October` = '10', `November` = '11', `December` = '12' ),
- 			multiple = FALSE),  
-             
+        	)
+        	),     
+
 		### Input for units
 		selectizeInput('flow_units', 'Flow Units', 
 			choices = c(`Mean m3/s` = 'm3/s', `Mean ft3/s` = 'cfs', `Total acre-ft` = 'ac-ft'),
-			multiple = FALSE)	
+			multiple = FALSE),
+			
+
+ 
+   		### Input for Date Subset appears if monthly is selected
+		conditionalPanel(
+		condition = "input.time_resolution == 'monthly'",
+ 		selectizeInput('time_subset', 'Date Subset', 
+ 			choices = c(`Full Timeseries` = '0', `January` = '1', `February` = '2', `March` = '3', `April` = '4', `May` = '5', `June` = '6', `July` = '7', `August` = '8', `September` = '9', `October` = '10', `November` = '11', `December` = '12' ),
+ 			multiple = FALSE)),  
+             		
+
+		### Input for Extreme Threshold appears once site name is selected
+		conditionalPanel(
+		condition = "input.site_name != ''",
+ 		
+			hr(),
+		h4("Extreme Threshold"),
+		 # Less than or greater than input
+  		selectInput("extreme_direction", "Threshold Direction",
+    	choices = list("Less than (<)" = "lt", "Greater than (>)" = "gt"), 
+    	selected = 1),
+		
+		### Input for threshold is calculated from server using percentiles
+		uiOutput("extreme_flow")
+		
+)
+
     
     ),
 
