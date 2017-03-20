@@ -28,20 +28,13 @@ function(input, output, session) {
   })
 
 
-
-
-
 ###########################################################################
-## Extract the subset information and flow units
+## Extract the subset information
 ###########################################################################
 subset_input <- reactive({ as.numeric(input$time_subset) })
 
-### Extract the flow units
-flow_units <- reactive({ input$flow_units })
-
 ### Extract time resolution
 time_resolution <- reactive({input$time_resolution})
-
 
 ###########################################################################
 ## Determine site information
@@ -105,22 +98,16 @@ paleo_ts_temp <- reactive({
 		paleo_ts_location <- file.path(data_path, site_info()$resolution)
 		paleo_ts_location <- file.path(paleo_ts_location, paste0("flow_",site_info()$site_id,".csv"))
 		paleo_ts_temp <- read.csv(paleo_ts_location) 
-		#paleo_ts_temp <- paleo_list[[list_id()]]$flow_ts
 		
 		### Create date vector and apply to time series
 		date_vec <- as.POSIXct(paste0(paleo_ts_temp$Year,"/",paleo_ts_temp$Month, "/15"), format="%Y/%m/%d")
 		paleo_ts_temp <- xts(paleo_ts_temp, date_vec)
 
-		### If it is not a full time series, subset it and NA out the annual timeseries
-		if (subset_input() > 0) {
-			paleo_ts_temp <- subset(paleo_ts_temp, Month==subset_input())
-			paleo_ts_temp$Annual_Recon <- NA
-		}
-
-	paleo_ts_temp
+		### Return temp
+		paleo_ts_temp
 	}
 })
-
+		
 ###########################################################################
 ## Extract dates from time series
 ###########################################################################
@@ -133,33 +120,77 @@ year_month <- reactive({
 })
 
 ###########################################################################
+## Extract Unit Conversion
+###########################################################################
+### Extract the flow units
+flow_units <- reactive({ input$flow_units })
+
+### Calculate flow scaling factor
+unit_conversion <- reactive({
+	### If m3/s
+	unit_conv <- 1
+	### If cfs
+		if (flow_units() == "cfs"){
+			unit_conv <- 35.31467
+		}
+	### If acre-feet
+		if (flow_units() == "ac-ft"){
+			## Convert to cfs
+			unit_conv <- 35.31467
+			### Convert to ac-ft per second
+			unit_conv <- unit_conv * (1/43560)
+			### Convert to ac-ft per month
+			unit_conv <- unit_conv * 60*60*24*days_in_month(year_month())
+		}
+	unit_conv
+})
+
+###########################################################################
+## Create full (no subset) time series with correct units
+###########################################################################
+### Columns that aren't month and year - to scale and ultimately plot
+cols_to_scale <- reactive({ !(names(paleo_ts_temp()) %in% c("Month", "Year")) })
+
+paleo_ts_full <- reactive({
+	### Scale columns for units
+	paleo_ts_full <- paleo_ts_temp()
+	paleo_ts_full[,cols_to_scale()] <- paleo_ts_full[,cols_to_scale()]*unit_conversion()
+	paleo_ts_full
+})
+
+paleo_ts_subset <- reactive({
+	### If it is not a full time series, subset it and NA out the annual timeseries
+	if (subset_input() > 0) {
+		paleo_ts_subset <- subset(paleo_ts_full(), Month==subset_input())
+		paleo_ts_subset$Annual_Recon <- NA
+		paleo_ts_subset
+	### Otherwise return the full time series
+	} else {
+		paleo_ts_full()
+	}
+})
+
+###########################################################################
 ## Process the time series for plotting, remove date columns and convert units
 ###########################################################################
-paleo_ts <- reactive({
+paleo_ts_plot <- reactive({
+	if (list_id()=="None"){
+		### Generate a blank graph
+		paleo_ts_temp <- data.frame(Observed=rep(NA,300), Annual_Recon=rep(NA,300), Monthly_Recon=rep(NA,300))
+		paleo_ts_plot <- ts(as.matrix(paleo_ts_temp), start=c(1700,1), frequency=12)
+	} else {
 		### Remove the monthly and annual columns before plotting
-		paleo_ts_temp <- paleo_ts_temp()[ ,!(colnames(paleo_ts_temp()) %in% c("Month", "Year"))]
-		
-		### Convert Units
-		if (flow_units() == "cfs"){
-		paleo_ts_temp <- paleo_ts_temp * 35.31467
-		}
-		if (flow_units() == "ac-ft"){
-		## Convert to cfs
-		paleo_ts_temp <- paleo_ts_temp * 35.31467
-		### Convert to ac-ft per second
-		paleo_ts_temp <- paleo_ts_temp * (1/43560)
-		### Convert to ac-ft per month
-		paleo_ts_temp <- paleo_ts_temp * 60*60*24*days_in_month(year_month())
-		}
-		### Return time series for plot
-	paleo_ts_temp
+		paleo_ts_plot <- paleo_ts_subset()[,cols_to_scale()]
+	}
+	### Return time series for plot
+	paleo_ts_plot
 })
 
 ###########################################################################
 ## Calculate maximum flow for plotting range
 ###########################################################################
 y_lims <- reactive({ 
-	max_y <- max(c(paleo_ts()), na.rm=TRUE)
+	max_y <- max(c(paleo_ts_plot()), na.rm=TRUE)
 	max_y <- 1.1*max_y
 	c(0,max_y) 
 	})
@@ -170,9 +201,9 @@ y_lims <- reactive({
 ###########################################################################
 gof_df_temp <- reactive({
 	### Test if there are values
-  	if(max(paleo_ts()$Observed, na.rm=TRUE) > 0) {
+  	if(max(paleo_ts_subset()$Observed, na.rm=TRUE) > 0) {
   		### Create dataframe
-  		gof_df <- data.frame(paleo_ts())
+  		gof_df <- data.frame(paleo_ts_subset())
   		gof_df <- data.frame(Observed=gof_df$Observed, Reconstructed=gof_df$Monthly_Rec, Month=paleo_ts_temp()$Month, Year=paleo_ts_temp()$Year)
 	
   	  	### Cut to common reference period
@@ -190,7 +221,7 @@ gof_df_temp <- reactive({
 
 gof_df <- reactive({
 	### Test if there are values
-  	if(max(paleo_ts()$Observed, na.rm=TRUE) > 0) {
+  	if(max(paleo_ts_subset()$Observed, na.rm=TRUE) > 0) {
   	  	gof_df <- gof_df_temp()  
   	  	gof_df <- gof_df[,c("Observed", "Reconstructed", "Reconstructed.tooltip")]		
   		### Add a blank column with two enpoints to produce the 1:1 line
@@ -259,11 +290,11 @@ gof_table_df <- reactive({
 ###########################################################################
 ## Extract the subset information and flow units
 ###########################################################################
-max_suggest <- reactive({ ceiling(max(paleo_ts()$Monthly_Recon, na.rm=TRUE)) })
+max_suggest <- reactive({ ceiling(max(paleo_ts_subset()$Monthly_Recon, na.rm=TRUE)) })
 suggest_extreme <- reactive({ if (input$extreme_direction == "gt") {
-			quantile(paleo_ts()$Monthly_Recon, 0.15, na.rm=TRUE) 
+			quantile(paleo_ts_subset()$Monthly_Recon, 0.15, na.rm=TRUE) 
 		} else {
-			quantile(paleo_ts()$Monthly_Recon, 0.85, na.rm=TRUE) 
+			quantile(paleo_ts_subset()$Monthly_Recon, 0.85, na.rm=TRUE) 
 		}
 	})
 suggest_steps <- reactive({ signif(max_suggest()/200,1) })	
@@ -279,7 +310,7 @@ sliderInput("extreme_flow", label = "Extreme flow", min = 0,
 ## Output to extremes tab
 ########################################################################### 
    output$site_out <- renderPrint({
-   suggest_steps()
+   paleo_ts_subset()
     
   })
 
@@ -289,14 +320,14 @@ sliderInput("extreme_flow", label = "Extreme flow", min = 0,
 ########################################################################### 
   output$tsPlot <- 
     renderDygraph({
-    dygraph(paleo_ts(), main = site_name()) %>%
+    dygraph(paleo_ts_plot(), main = site_name()) %>%
     dyRangeSelector(dateWindow = c("1850-01-01", "1995-01-01")) %>%
     dyOptions(axisLineWidth = 1.5, drawGrid = FALSE, titleHeight= 28) %>%
     dyLegend(show = "always", hideOnMouseOut = FALSE, labelsSeparateLines=TRUE) %>%
     dyAxis("y", label = paste0("Monthly Mean Discharge (",flow_units(),")"), valueRange=y_lims()) %>%
-    dySeries("Observed", color="#e41a1c")  %>%
-    dySeries("Monthly_Recon", color="#404040", strokeWidth = 1.5) %>% 
-    dySeries("Annual_Recon", color="#377eb8", strokeWidth = 2, strokePattern = "dashed")
+    dySeries("Observed", color="#e41a1c", strokeWidth=0.8)  %>%
+    dySeries("Monthly_Recon", color="#404040", strokeWidth = 0.8) %>% 
+    dySeries("Annual_Recon", color="#377eb8", strokeWidth = 1.2, strokePattern = "dashed")
   	})    
     
 ###########################################################################
