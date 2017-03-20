@@ -307,20 +307,19 @@ sliderInput("extreme_flow", label = "Extreme flow", min = 0,
 extremes_table <- reactive({ 
 	### If greater than, subset to greater than and sort in descending order
 		if (input$extreme_direction == "gt") {
+			### Subset table 
 			extremes_table <- subset(paleo_ts_subset(), Monthly_Recon > input$extreme_flow)
+			### Resort table
 			extremes_table <- data.frame(extremes_table)
-			#extremes_table <- extremes_table[with(extremes_table, order(-Monthly_Recon)), ]
-			#extremes_table <- extremes_table[order(-Monthly_Recon),]
 			extremes_table <- extremes_table[with(extremes_table, order(Monthly_Recon, Year)),]			
 	### If less than, subset to greater than and sort in descending order
 		} else {
+			### Subset table 
 			extremes_table <- subset(paleo_ts_subset(), Monthly_Recon < input$extreme_flow)
+			### Resort table
 			extremes_table <- data.frame(extremes_table)
-			#extremes_table <- extremes_table[with(extremes_table, order(Monthly_Recon)), ]
-			#extremes_table <- extremes_table[order(Monthly_Recon),]
 			extremes_table <- extremes_table[with(extremes_table, order(Monthly_Recon, Year)),]
 		}
-
 	### Return extremes table
 	extremes_table 
 })
