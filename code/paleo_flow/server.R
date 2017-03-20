@@ -257,26 +257,16 @@ gof_table_df <- reactive({
  	### If Date subset is something other than the full period
  	### Calculate goodness of fit statistics for that month also
  	if (subset_input() > 0) {
-#		month_subset <- subset(gof_df_temp(), Month==subset_input())
-# 		gof_table_df <- rbind(gof_table_df, gof_ts(month_subset$Reconstructed, month_subset$Observed))
- 		
- 		### Make all columns numeric
-# 		gof_table_df <- apply(gof_table_df,2, as.numeric)
-# 		gof_table_df <- signif_df(gof_table_df,3)
- 		
  		### Determine month name and create dataframe
  		period_name <- format(ISOdatetime(2000,subset_input(),1,0,0,0),"%b")
 	} else {
 		period_name <- "Full"
 	}
-# 	} else {
  		### Make all columns numeric
  		gof_table_df <- data.frame(gof_table_df)
  		gof_table_df <- signif_df(gof_table_df,3)
-# 		gof_table_df <- apply(gof_table_df,2, as.numeric)
  		### Create Data frame
  		gof_table_df <- data.frame(Period=period_name, gof_table_df)
- #	}
  		### Cut the extraneous columns out
  		gof_table_df <- gof_table_df[ , !(names(gof_table_df) %in% c("MAE", "R.spear"))]
  		### Rename Columns
@@ -288,29 +278,59 @@ gof_table_df <- reactive({
 
 
 ###########################################################################
-## Extract the subset information and flow units
+## Create the extremes input
 ###########################################################################
+### Suggest the maximum flow in subset
 max_suggest <- reactive({ ceiling(max(paleo_ts_subset()$Monthly_Recon, na.rm=TRUE)) })
+
+### Suggest an extreme flow based on the 15th or 85 percentile (depending if gt or less than)
 suggest_extreme <- reactive({ if (input$extreme_direction == "gt") {
-			quantile(paleo_ts_subset()$Monthly_Recon, 0.15, na.rm=TRUE) 
-		} else {
 			quantile(paleo_ts_subset()$Monthly_Recon, 0.85, na.rm=TRUE) 
+		} else {
+			quantile(paleo_ts_subset()$Monthly_Recon, 0.15, na.rm=TRUE) 
 		}
 	})
-suggest_steps <- reactive({ signif(max_suggest()/200,1) })	
 	
+### Suggest the size of steps	
+suggest_steps <- reactive({ signif(max_suggest()/200,1) })	
+
+### Create the extreme threshold input	
 output$extreme_flow <- renderUI({
 sliderInput("extreme_flow", label = "Extreme flow", min = 0, 
         max = max_suggest(), value = suggest_extreme(), step = suggest_steps())
 })        
 
 
+###########################################################################
+## Calculate extreme output
+###########################################################################
+extremes_table <- reactive({ 
+	### If greater than, subset to greater than and sort in descending order
+		if (input$extreme_direction == "gt") {
+			extremes_table <- subset(paleo_ts_subset(), Monthly_Recon > input$extreme_flow)
+			extremes_table <- data.frame(extremes_table)
+			#extremes_table <- extremes_table[with(extremes_table, order(-Monthly_Recon)), ]
+			#extremes_table <- extremes_table[order(-Monthly_Recon),]
+			extremes_table <- extremes_table[with(extremes_table, order(Monthly_Recon, Year)),]			
+	### If less than, subset to greater than and sort in descending order
+		} else {
+			extremes_table <- subset(paleo_ts_subset(), Monthly_Recon < input$extreme_flow)
+			extremes_table <- data.frame(extremes_table)
+			#extremes_table <- extremes_table[with(extremes_table, order(Monthly_Recon)), ]
+			#extremes_table <- extremes_table[order(Monthly_Recon),]
+			extremes_table <- extremes_table[with(extremes_table, order(Monthly_Recon, Year)),]
+		}
+
+	### Return extremes table
+	extremes_table 
+})
+
 
 ###########################################################################
 ## Output to extremes tab
 ########################################################################### 
    output$site_out <- renderPrint({
-   paleo_ts_subset()
+   extremes_table()
     
   })
 
@@ -373,8 +393,8 @@ output$gof_table_simple <-renderTable({
     gof_table_df()
   }, digits=3)
 
-  output$gof_table <- DT::renderDataTable({
-   DT::datatable(gof_table_df(), plugins='natural', rownames=FALSE, 
+  output$extreme_table <- DT::renderDataTable({
+   DT::datatable(extremes_table(), plugins='natural', rownames=FALSE, 
     	options = list(pageLength = 13, dom='t', columnDefs = list(list(type = 'natural', targets = 0)) ))
   })
 

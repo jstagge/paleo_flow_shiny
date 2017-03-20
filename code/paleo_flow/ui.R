@@ -101,6 +101,7 @@ fluidPage(
 ## Extremes Tab
 ###########################################################################           
         tabPanel("Extremes",  
+        	DT::dataTableOutput("extreme_table"),
         	verbatimTextOutput('site_out')
         ), 
 
