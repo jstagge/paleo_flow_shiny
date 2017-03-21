@@ -5,7 +5,7 @@ fluidPage(
   # Google Analytics script
   tags$head(includeScript("google-analytics.js")),
   # Title
-  titlePanel("Reconstructed Streamflow Explorer"),
+  titlePanel("PaleoFlow: Reconstructed Streamflow Explorer"),
   # This line loads the Google Charts JS library
 	googleChartsInit(),
 ###########################################################################
@@ -128,8 +128,18 @@ fluidPage(
 ###########################################################################           
         tabPanel("Period Comparison",  
         	h2("Period Comparison"),
-        	p("Coming Soon.")  ,	
-        	verbatimTextOutput('site_out')
+        	helpText("This tab allows a quick comparison between two user-selected historical periods. Select the period on the left.")  ,	
+	      	tableOutput("period_info_table"),
+	      	br(),
+	       	h4("Extreme Flows"),
+	       	tableOutput("period_extreme_table"),
+	       	br(),
+	       	h4("Threshold Exceedances"),
+	       	tableOutput("period_threshold_table"),
+	       	hr(),
+	       	h3("Flow Distribution Comparison"),
+	       	helpText("Flow distributions can be compared between the two periods. Plot will adjust automatically to changes in period. All flows shown on a log scale."),
+	       	plotOutput("period_compar_dist")
         ), 
                 
 ###########################################################################

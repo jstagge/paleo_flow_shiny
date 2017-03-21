@@ -26,7 +26,8 @@ require(xts)
 library(googleCharts)
 require(shiny)
 require(shinythemes)
-
+library(MASS)
+library(scales)
 
 ### Load project specific functions
 #file.sources = list.files(function_path, pattern="*.R", recursive=TRUE)

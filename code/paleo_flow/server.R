@@ -359,7 +359,7 @@ date_most_extreme <- reactive({as.character(extremes_table()$Date[1])})
 
 threshold_exceed <- reactive({dim(extremes_table())[1]})
 length_time_series <- reactive({sum(paleo_ts_subset()$Monthly_Rec > 0, na.rm=TRUE)})
-freq_threshold_exceed <- reactive({threshold_exceed()/length_time_series()})
+freq_threshold_exceed <- reactive({threshold_exceed()/(1+length_time_series())})
 return_per <- reactive({1/freq_threshold_exceed()})
 
 ### Output for Extreme summary
@@ -371,12 +371,147 @@ output$freq_threshold_exceed_text <- renderUI({ HTML(paste0("<strong>Likelihood 
 output$return_per_text <- renderUI({ HTML(paste0("<strong>Approximate (Empirical) Return Period</strong> :   ",signif(return_per(),2), " years")) })
 
 
+###########################################################################
+## Calculate Period Comparison
+###########################################################################
+### Extract Periods 1 and 2
+period_1_subset <- reactive({ 
+ 	period_1_subset <- subset(paleo_ts_subset(), Year >= input$period_slider_1[[1]] & Year <= input$period_slider_1[[2]])
+ 	period_1_subset <- data.frame(period_1_subset)
+ 	date_column <- as.Date(paste0(period_1_subset$Year, "/",period_1_subset$Month, "/15"))
+	period_1_subset$Date <- format(date_column, "%b %Y")
+	period_1_subset
+})
+
+period_2_subset <- reactive({ 
+ 	period_2_subset <- subset(paleo_ts_subset(), Year >= input$period_slider_2[[1]] & Year <= input$period_slider_2[[2]])
+ 	period_2_subset <- data.frame(period_2_subset)
+ 	date_column <- as.Date(paste0(period_2_subset$Year, "/",period_2_subset$Month, "/15"))
+	period_2_subset$Date <- format(date_column, "%b %Y") 	
+	period_2_subset
+})
+
+period_vec <- reactive({c(paste0(input$period_slider_1[[1]], " - ", input$period_slider_1[[2]]), paste0(input$period_slider_2[[1]], " - ", input$period_slider_2[[2]]))})
+
+### Create a dataframe for Period Information
+period_info_df <- reactive({  
+	### Create duration data
+	duration_vec <- c((input$period_slider_1[[2]] - input$period_slider_1[[1]]), (input$period_slider_2[[2]] - input$period_slider_2[[1]]))		
+  ### Compose data frame
+    data.frame(
+      Measure = c("Period", 
+               "Number of Years"),
+      Period_1 = as.character(c(period_vec()[1], 
+      						duration_vec[1]
+      						)),
+      Period_2 = as.character(c(period_vec()[2], 
+                             duration_vec[2]                           
+                             )), 
+      stringsAsFactors=FALSE)
+})
+      
+### Create a dataframe for Period Extreme Comparison
+period_extreme_df <- reactive({  
+	### Max flows
+   max_p1 <- signif(max(period_1_subset()$Monthly_Recon, na.rm=TRUE), 4)
+   max_p2 <- signif(max(period_2_subset()$Monthly_Recon, na.rm=TRUE), 4)
+   
+   date_max_p1 <- period_1_subset()$Date[which.max(period_1_subset()$Monthly_Recon)]
+   date_max_p2 <- period_2_subset()$Date[which.max(period_2_subset()$Monthly_Recon)]
+
+	### Min flows
+   min_p1 <- signif(min(period_1_subset()$Monthly_Recon, na.rm=TRUE), 4)
+   min_p2 <- signif(min(period_2_subset()$Monthly_Recon, na.rm=TRUE), 4)
+   
+   date_min_p1 <- period_1_subset()$Date[which.min(period_1_subset()$Monthly_Recon)]
+   date_min_p2 <- period_2_subset()$Date[which.min(period_2_subset()$Monthly_Recon)]
+   
+  ### Compose data frame
+    data.frame(
+      Measure = c("Period",
+               paste0("Maximum Flow (",flow_units(),")"),
+               "Date of Maximum",
+               paste0("Minimum Flow (",flow_units(),")"),
+               "Date of Minimum"),
+      Period_1 = as.character(c(period_vec()[1], 
+      						max_p1,date_max_p1,min_p1,date_min_p1
+      						)),
+      Period_2 = as.character(c(period_vec()[2], 
+                             max_p2,date_max_p2,min_p2,date_min_p2                        
+                             )), 
+      stringsAsFactors=FALSE)
+})
+
+
+
+
+
+period_threshold_df <- reactive({  
+   ### Threshold Exceedances
+   if (input$extreme_direction == "gt") {
+		threshold_exceed_p1 <- sum(period_1_subset()$Monthly_Recon > input$extreme_flow, na.rm=TRUE)
+		threshold_exceed_p2 <- sum(period_2_subset()$Monthly_Recon > input$extreme_flow, na.rm=TRUE)
+	} else {
+		threshold_exceed_p1 <- sum(period_1_subset()$Monthly_Recon < input$extreme_flow, na.rm=TRUE)
+		threshold_exceed_p2 <- sum(period_2_subset()$Monthly_Recon < input$extreme_flow, na.rm=TRUE)
+	}
+	
+	length_p1 <- sum(period_1_subset()$Monthly_Recon > 0, na.rm=TRUE)
+	length_p2 <- sum(period_2_subset()$Monthly_Recon > 0, na.rm=TRUE)
+	
+	freq_threshold_p1 <- threshold_exceed_p1/(1+length_p1)
+	freq_threshold_p2 <- threshold_exceed_p2/(1+length_p2)
+	
+	freq_threshold_p1 <- paste0(signif(100*freq_threshold_p1,3), " %")
+	freq_threshold_p2 <- paste0(signif(100*freq_threshold_p2,3), " %")
+
+  ### Compose data frame
+    data.frame(
+      Measure = c("Period",
+               paste0("Threshold (",flow_units(),")"),
+               "Threshold Exceedances",
+               "Likelihood of Exceedance"),
+      Period_1 = as.character(c(period_vec()[1], 
+      						input$extreme_flow,threshold_exceed_p1,freq_threshold_p1
+      						)),
+      Period_2 = as.character(c(period_vec()[2], 
+                             input$extreme_flow,threshold_exceed_p2,freq_threshold_p2                           
+                             )), 
+      stringsAsFactors=FALSE)
+})
+      
+
+###########################################################################
+## Create Data for Period Comparison plot
+########################################################################### 
+period_compar_dist_df <- reactive({
+		### Read in subsets
+		period_1_subset <- period_1_subset()
+		period_2_subset <- period_2_subset()
+		
+		### Remove NAs
+		period_1_subset <- period_1_subset[!is.na(period_1_subset$Monthly_Recon),]
+		period_2_subset <- period_2_subset[!is.na(period_2_subset$Monthly_Recon),]
+				
+		### Calculate plotting position
+		period_1_subset$rank <- rank(period_1_subset$Monthly_Recon)
+		period_1_subset$plot_pos <- period_1_subset$rank/(dim(period_1_subset)[1] + 1)
+		period_1_subset$Period <- period_vec()[1]
+		
+		period_2_subset$rank <- rank(period_2_subset$Monthly_Recon)
+		period_2_subset$plot_pos <- period_2_subset$rank/(dim(period_2_subset)[1] + 1)
+		period_2_subset$Period <- period_vec()[2]
+		
+		### Return result
+		rbind(period_1_subset, period_2_subset)
+})
+
 
 ###########################################################################
 ## Output to extremes tab
 ########################################################################### 
    output$site_out <- renderPrint({
-   density_range()
+   period_compar_dist_df()
   })
 
 
@@ -475,6 +610,43 @@ output$gof_table_simple <-renderTable({
    })	
 
 
+
+
+###########################################################################
+## Output Period Comparisons to tables
+###########################################################################   
+output$period_info_table <-renderTable({
+    period_info_df()
+  })
+  
+output$period_extreme_table <-renderTable({
+    period_extreme_df()
+  })
+  
+output$period_threshold_table <-renderTable({
+    period_threshold_df()
+  })
+  
+  
+  
+###########################################################################
+## Output to Period distribution plot
+###########################################################################   
+ output$period_compar_dist <-renderPlot({
+ 		### Create the plot
+  		p <- ggplot(period_compar_dist_df(), aes(x=plot_pos*100, y=Monthly_Recon, colour=Period))
+  		p <- p + geom_line()
+  		p <- p + scale_x_continuous(name="Percentile (%)")
+  		#p <- p + scale_y_log10(name=paste0("Streamflow (",flow_units(),")"))
+  		p <- p + scale_y_log10(name=paste0("Streamflow (",flow_units(),")"), breaks = c(1,5, 10,50,100,1000,10000))#trans_breaks("log10", function(x) 10^x))
+        p <- p + annotation_logticks(sides="l")
+  		p <- p + theme_light()
+  		p
+   })	
+
+
+  
+  
   
 }
 
