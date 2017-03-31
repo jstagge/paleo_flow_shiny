@@ -16,16 +16,13 @@ require(reshape2)
 
 ### Load these functions for this unique project
 require(ggplot2)
-require(googleVis)
+suppressPackageStartupMessages(library(googleVis))
 require(shiny)
 library(dygraphs)
-library(datasets)
 require(shinythemes)
 require(lubridate)
 require(xts)
 library(googleCharts)
-require(shiny)
-require(shinythemes)
 library(MASS)
 library(scales)
 
