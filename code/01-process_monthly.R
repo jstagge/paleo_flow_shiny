@@ -67,6 +67,7 @@ require(reshape2)
 ### Load these functions for this unique project
 library(datasets)
 require(lubridate)
+require(ggplot2)
 
 ### Load project specific functions
 file.sources = list.files(function_path, pattern="*.R", recursive=TRUE)
@@ -81,18 +82,24 @@ sapply(file.path(global_path, file.sources),source)
 ## Set Initial Values
 ###########################################################################
 ### Set site data
-site_id_list <- c("10109001", "10011500")
-site_name_list <- c("Logan River", "Bear River near Utah-Wyo")
-recons_file_name_list <- c("logan2013flow.txt", "bear2015flow.txt")
-
-month_reconst_file_list <- file.path(file.path(output_path,"paleo_monthly/paleo_monthly_gen/percentile_pred_model"))
-month_reconst_file_list <- c(file.path(month_reconst_file_list, "10109001_percentile_pred_model_clim_pca_impute_concur_month_ts_rec_region.csv"), 
-file.path(month_reconst_file_list, "10011500_percentile_pred_model_clim_pca_impute_concur_month_ts_rec.csv")
-)
-
+site_id_list <- c("10109001", "10011500", "10128500")
+site_name_list <- c("Logan River", "Bear River near Utah-Wyo", "Weber River")
+recons_file_name_list <- c("logan2013flow.txt", "bear2015flow.txt", "weber2014flow.txt")
 
 first_month_wy <- 10 ### Water Year starts on Oct 1
 param_cd <- "00060"
+
+
+### Create list of monthly reconstruction
+month_reconst_file_list <- file.path(file.path(output_path,"paleo_monthly/paleo_monthly_gen/percentile_pred_model"))
+month_reconst_file_list <- c(file.path(month_reconst_file_list, "10109001_percentile_pred_model_clim_pca_impute_concur_month_ts_rec_region.csv"), 
+file.path(month_reconst_file_list, "10011500_percentile_pred_model_clim_pca_impute_concur_month_ts_rec.csv"))
+month_reconst_file_list[3] <- "../../../output/paleo_weber/apr_model/10128500_apr_model_enso_pca_impute_std_concur_reconst_ts_rec_local.csv"
+
+### Create list of observed flows
+obs_file_list <- file.path(output_path,"paleo_monthly/observed_utah_flow")
+obs_file_list <- paste0(obs_file_list, "/", site_id_list[1:2], "_",param_cd,"_mon_wy.csv")
+obs_file_list[3] <- "../../../output/paleo_weber/observed_flow/10128500_00060_mon_wy.csv"
 
 
 ###########################################################################
@@ -113,15 +120,15 @@ date_df$water_year <- usgs_wateryear(year=date_df$year, month=date_df$month)
 
 ### Read in reconst flows (use fread because of large header)
 
-flow_recon <- read_table_wheaders(file.path(data_path,paste0("paleo_derose_annual_recon/",recons_file_name)), sep="\t", na.string="-9999")
+flow_recon <- read_table_wheaders(file.path(data_path,paste0("paleo_flow_annual/",recons_file_name)), sep="\t", na.string="-9999")
 
 flow_merge <- merge(date_df, flow_recon, by.x="water_year", by.y="age_AD", all.x=TRUE)
 flow_merge$date <- as.Date(paste0(flow_merge$year, "-", flow_merge$month, "-01"))
 
-
 ### Read in observed flow and fix data type
-obs_file_name <- paste0(site_id,"_",param_cd,"_mon_wy.csv")
-flow_obs <- read.csv(file.path(output_path,paste0("paleo_monthly/observed_utah_flow/",obs_file_name)))
+#obs_file_name <- paste0(site_id,"_",param_cd,"_mon_wy.csv")
+flow_obs <- read.csv(obs_file_list[n])
+#flow_obs <- read.csv(file.path(output_path,paste0("paleo_monthly/observed_utah_flow/",obs_file_name)))
 flow_obs$date <- as.Date(flow_obs$date)  
 #head(flow_obs) # Review data frame
 
@@ -136,7 +143,7 @@ reconst_ts <- reconst_ts[order(reconst_ts$date),]
 
 
 ### Read in the original annual time series
-flow_recon <- read_table_wheaders(file.path(data_path,paste0("paleo_derose_annual_recon/",recons_file_name)), sep="\t", na.string="-9999")
+flow_recon <- read_table_wheaders(file.path(data_path,paste0("paleo_flow_annual/",recons_file_name)), sep="\t", na.string="-9999")
 
 
 ###########################
@@ -146,6 +153,8 @@ flow_obs_plot <- flow_obs[,c(seq(1,6),8)]
 reconst_ts_plot <- reconst_ts[,c(seq(1,6),8)]
 if (site_id == "10109001"){
 annual_recon_plot <- data.frame(water_year = flow_recon$age_AD, annual_m3s = flow_recon$flow.rec.region.m3s)
+} else if (site_id == "10128500") {
+annual_recon_plot <- data.frame(water_year = flow_recon$age_AD, annual_m3s = flow_recon$flow.rec.local.m3s)
 } else {
 annual_recon_plot <- data.frame(water_year = flow_recon$age_AD, annual_m3s = flow_recon$flow.rec.m3s)
 }

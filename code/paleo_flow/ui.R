@@ -17,9 +17,12 @@ fluidPage(
 
     	### Input for time resolution
 		selectizeInput('time_resolution', 'Time Resolution', 
-			choices = c(`Monthly` = 'monthly', `Annual` = 'annual'),
+			choices = c(`Monthly` = 'monthly'),
 			multiple = FALSE), 
-
+		
+		### Add this back in when ready for annual
+		#, `Annual` = 'annual'
+		
 		### Input for site location
  		selectizeInput('site_name', 'Site Location', 
  			choices =  create_site_list(site_all, res = "monthly"),

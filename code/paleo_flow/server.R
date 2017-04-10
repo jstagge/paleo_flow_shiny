@@ -521,7 +521,8 @@ period_compar_dist_df <- reactive({
   output$tsPlot <- 
     renderDygraph({
     dygraph(paleo_ts_plot(), main = site_name()) %>%
-    dyRangeSelector(dateWindow = c("1850-01-01", "1995-01-01")) %>%
+    dyRangeSelector()  %>%
+   # dyRangeSelector(dateWindow = c("1850-01-01", "1995-01-01")) %>%
     dyOptions(axisLineWidth = 1.5, drawGrid = FALSE, titleHeight= 28) %>%
     dyLegend(show = "always", hideOnMouseOut = FALSE, labelsSeparateLines=TRUE) %>%
     dyAxis("y", label = paste0("Monthly Mean Discharge (",flow_units(),")"), valueRange=y_lims()) %>%
