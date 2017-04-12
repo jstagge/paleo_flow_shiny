@@ -17,7 +17,7 @@ fluidPage(
 
     	### Input for time resolution
 		selectizeInput('time_resolution', 'Time Resolution', 
-			choices = c(`Monthly` = 'monthly'),
+			choices = c(`Monthly` = 'monthly', `Annual` = 'annual'),
 			multiple = FALSE), 
 		
 		### Add this back in when ready for annual
@@ -87,7 +87,8 @@ fluidPage(
 ## Time Series Tab
 ###########################################################################     
         tabPanel("Overview", 
-        	
+        	### Uncomment for troubleshooting
+        	#textOutput("text1"),
         	h2("Reconstructed Time Series Overview"),
         	p("Please select a temporal resolution (Annual or Monthly) and a site on the left to view a reconstructed time series. For monthly reconstructions, it is possible to focus on particular months. These selections will populate the other tabs."),
         	br(),

@@ -48,6 +48,8 @@ list_id <- reactive({
 	}
 })
 
+
+
 ### Extract Site Info
 site_info <- reactive({
 	if (list_id()=="None"){
@@ -56,9 +58,11 @@ site_info <- reactive({
 		blank_site$site_name <- "Please Select Site"
 		blank_site
 	} else {
-		site_all[list_id(),]
+		row_num <- which(site_all$list_id == list_id())
+		site_all[row_num,]
 	}
 })
+
 
 ### Extract Site Name
 site_name <- reactive({ site_info()$site_name })
@@ -96,7 +100,7 @@ paleo_ts_temp <- reactive({
 	} else {
 		### Read time series from list 
 		paleo_ts_location <- file.path(data_path, site_info()$resolution)
-		paleo_ts_location <- file.path(paleo_ts_location, paste0("flow_",site_info()$site_id,".csv"))
+		paleo_ts_location <- file.path(paleo_ts_location, paste0(site_info()$file_name,".csv"))
 		paleo_ts_temp <- read.csv(paleo_ts_location) 
 		
 		### Create date vector and apply to time series
@@ -530,8 +534,12 @@ period_compar_dist_df <- reactive({
 ###########################################################################
 ## Output to time series plot
 ########################################################################### 
-  output$tsPlot <- 
-    renderDygraph({
+
+  
+  observe({
+  if (time_resolution() == "monthly") {
+  
+ output$tsPlot <-  renderDygraph({
     dygraph(paleo_ts_plot(), main = site_name()) %>%
     dyRangeSelector()  %>%
    # dyRangeSelector(dateWindow = c("1850-01-01", "1995-01-01")) %>%
@@ -541,7 +549,23 @@ period_compar_dist_df <- reactive({
     dySeries("Observed", color="#e41a1c", strokeWidth=0.8)  %>%
     dySeries("Monthly_Recon", color="#404040", strokeWidth = 0.8) %>% 
     dySeries("Annual_Recon", color="#377eb8", strokeWidth = 1.2, strokePattern = "dashed")
+  	})      
+  } else {
+  
+  output$tsPlot <-  renderDygraph({
+    dygraph(paleo_ts_plot(), main = site_name()) %>%
+    dyRangeSelector()  %>%
+   # dyRangeSelector(dateWindow = c("1850-01-01", "1995-01-01")) %>%
+    dyOptions(axisLineWidth = 1.5, drawGrid = FALSE, titleHeight= 28) %>%
+    dyLegend(show = "always", hideOnMouseOut = FALSE, labelsSeparateLines=TRUE) %>%
+    dyAxis(name="x",axisLabelFormatter = "function(d){ return d.getFullYear() }"  ) %>%
+    dyAxis("y", label = paste0("Annual Mean Discharge (",flow_units(),")"), valueRange=y_lims()) %>%
+    dySeries("Observed", color="#e41a1c", strokeWidth=0.8)  %>%
+    dySeries("Annual_Recon", color="#404040", strokeWidth = 0.8)
   	})    
+  }
+
+    }) 
     
 ###########################################################################
 ## Output to goodness of fit (Obs vs Reconstr) plot
@@ -658,6 +682,16 @@ output$period_threshold_table <-renderTable({
    })	
 
 
+ 
+###########################################################################
+## For troubleshooting
+###########################################################################   
+
+#output$text1 <- renderText({ 
+ #     paste("list_id=",list_id(),"site_info=", site_info())
+#    })
+
+ 
   
   
   

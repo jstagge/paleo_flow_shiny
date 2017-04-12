@@ -73,6 +73,7 @@ require(reshape2)
 library(datasets)
 require(lubridate)
 require(data.table)
+require(ggplot2) 
 
 ### Load project specific functions
 file.sources = list.files(function_path, pattern="*.R", recursive=TRUE)
@@ -184,8 +185,8 @@ flow_plot <- data.frame(Month=1, flow_merge)
 ###########################
 ###  Shorten to 20 years past end of monthly reconstruction
 ########################
-date_df <- expand.grid(Year=seq(1,2017))
-flow_plot <- merge(x=date_df, y=flow_plot, by="Year", all=TRUE)
+date_df <- expand.grid(Year=seq(1,2017), Month=1)
+flow_plot <- merge(x=date_df, y=flow_plot, by=c("Year", "Month"), all=TRUE)
 ### Re-sort to proper date order
 flow_plot <- flow_plot[order(flow_plot$Year),] 
 
@@ -221,8 +222,8 @@ flow_plot <- data.frame(Month=1, Year=flow_recon$age_AD, Observed=flow_recon$flo
 ###########################
 ###  Shorten to 20 years past end of monthly reconstruction
 ########################
-date_df <- expand.grid(Year=seq(1,2017))
-flow_plot <- merge(x=date_df, y=flow_plot, by="Year", all=TRUE)
+date_df <- expand.grid(Year=seq(1,2017), Month=1)
+flow_plot <- merge(x=date_df, y=flow_plot, by=c("Year", "Month"), all=TRUE)
 ### Re-sort to proper date order
 flow_plot <- flow_plot[order(flow_plot$Year),] 
 
@@ -257,8 +258,8 @@ flow_plot <- data.frame(Month=1, Year=flow_recon$age_AD, Observed=flow_recon$str
 ###########################
 ###  Shorten to 20 years past end of monthly reconstruction
 ########################
-date_df <- expand.grid(Year=seq(1,2017))
-flow_plot <- merge(x=date_df, y=flow_plot, by="Year", all=TRUE)
+date_df <- expand.grid(Year=seq(1,2017), Month=1)
+flow_plot <- merge(x=date_df, y=flow_plot, by=c("Year", "Month"), all=TRUE)
 ### Re-sort to proper date order
 flow_plot <- flow_plot[order(flow_plot$Year),] 
 
