@@ -48,6 +48,10 @@ fluidPage(
  			multiple = FALSE)),  
              		
 
+   		### Download Button
+   		downloadButton('downloadData', 'Download'),
+
+
 		### Input for Extreme Threshold appears once site name is selected
 		conditionalPanel(
 		condition = "input.site_name != ''",

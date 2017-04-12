@@ -12,3 +12,19 @@ https://www.r-bloggers.com/set-application-domain-name-with-shiny-server/amp/
 which relies on these steps
 https://www.digitalocean.com/community/tutorials/how-to-point-to-digitalocean-nameservers-from-common-domain-registrars
 https://www.digitalocean.com/community/tutorials/how-to-set-up-a-host-name-with-digitalocean
+
+
+
+
+To update the site list
+ssh into digital ocean (138.68.244.160)
+run the following
+
+sudo service shiny-server restart
+
+
+
+To update packages
+sudo apt-get dist-upgrade
+sudo apt-get update
+sudo apt-get upgrade

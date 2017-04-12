@@ -186,6 +186,18 @@ paleo_ts_plot <- reactive({
 	paleo_ts_plot
 })
 
+
+
+###########################################################################
+## Prepare for download
+###########################################################################
+ output$downloadData <- downloadHandler(
+    filename = function() { paste(site_info()$site_id, '_',flow_units(),'.csv', sep='') },
+    content = function(file) {
+      write.csv(paleo_ts_subset(), file)
+    }
+  )
+
 ###########################################################################
 ## Calculate maximum flow for plotting range
 ###########################################################################
