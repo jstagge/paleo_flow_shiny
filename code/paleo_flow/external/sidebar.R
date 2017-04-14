@@ -54,7 +54,7 @@ column(3,
  			multiple = FALSE))
 		)),
 	### Download Button
-   		downloadButton('downloadData', 'Download Data')
+   		downloadButton('downloadData', 'Download Data', class="btn-primary")
 		
 	
 	)
