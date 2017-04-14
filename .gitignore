@@ -37,7 +37,7 @@ ehthumbs.db
 Thumbs.db
 
 
-code/example/
-code/example_format/
-code/my_example4/
-code/paleo_flow_oldversion/
+code/example/*
+code/example_format/*
+code/my_example4/*
+code/paleo_flow_oldversion/*
