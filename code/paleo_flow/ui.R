@@ -1,201 +1,53 @@
-
-fluidPage(
-  # Application title and theme
-  theme = shinytheme("sandstone"),
-  # Google Analytics script
-  tags$head(includeScript("google-analytics.js")),
+shinyUI(navbarPageWithText(
   # Title
-  titlePanel("PaleoFlow: Reconstructed Streamflow Explorer"),
-  # This line loads the Google Charts JS library
-	googleChartsInit(),
-###########################################################################
-## Sidebar panel
-###########################################################################  
-  sidebarLayout(
-  # Sidebar with a slider and selection inputs  
-    sidebarPanel(
+ #HTML('<div class="hidden-md hidden-sm hidden-xs"><h3 style="display:inline"><strong>PaleoFlow:</strong> Reconstructed Streamflow Explorer</h3></div><div class="hidden-xl hidden-lg"><h3 style="display:inline"><strong>PaleoFlow</strong></h3><p>Reconstructed Streamflow Explorer</p></div>'),
+#HTML('<h3 style="display:inline"><strong>PaleoFlow</strong></h3><p >Reconstructed Streamflow Explorer</p>'),
 
-    	### Input for time resolution
-		selectizeInput('time_resolution', 'Time Resolution', 
-			choices = c(`Monthly` = 'monthly', `Annual` = 'annual'),
-			multiple = FALSE), 
-		
-		### Add this back in when ready for annual
-		#, `Annual` = 'annual'
-		
-		### Input for site location
- 		selectizeInput('site_name', 'Site Location', 
- 			choices =  create_site_list(site_all, res = "monthly"),
-    		selected = NULL,
-    		multiple = FALSE,
-    		options = list(
-          		placeholder = 'Select site location'
-        	)
-        	),     
+  # Application theme
+  theme = shinytheme("sandstone"),
+  HTML('<a " href="#"><img src="./img/logo.png" width="100%" ></a>'),
+	#position=c("fixed-top"),
 
-		### Input for units
-		selectizeInput('flow_units', 'Flow Units', 
-			choices = c(`Mean m3/s` = 'm3/s', `Mean ft3/s` = 'cfs', `Total acre-ft` = 'ac-ft'),
-			multiple = FALSE),
-			
-
- 
-   		### Input for Date Subset appears if monthly is selected
+	### Header
+  	tags$head(
+  	# Google Analytics script
+  	includeScript("google-analytics.js"),
+  	# This line loads the Google Charts JS library
+  	#googleChartsInit(),	
+    tags$style(HTML("   "))
+  ),
+  	selected="home",
+  	tabPanel("Home", value="home"),
+  	tabPanel("Extremes", value="extremes"),
+  	tabPanel("Period Comparison", value="periods"),
+  	tabPanel("Goodness of Fit", value="gof"),
+	tabPanel("About", value="about"),
+  	text = HTML('<div class="hidden-md hidden-sm hidden-xs"><div class="pull-right" style="padding-right:40px; padding-top:20px"><img src="./img/usu_horizontal_white.png" width="100%" ></div></div>'),
+	windowTitle="Paleoflow",
+	#collapsible=TRUE,
+	id="nav_value",
+	fluidRow(
+		source("external/sidebar.R",local=T)$value,
 		conditionalPanel(
-		condition = "input.time_resolution == 'monthly'",
- 		selectizeInput('time_subset', 'Date Subset', 
- 			choices = c(`Full Timeseries` = '0', `January` = '1', `February` = '2', `March` = '3', `April` = '4', `May` = '5', `June` = '6', `July` = '7', `August` = '8', `September` = '9', `October` = '10', `November` = '11', `December` = '12' ),
- 			multiple = FALSE)),  
-             		
-
-   		### Download Button
-   		downloadButton('downloadData', 'Download'),
-
-
-		### Input for Extreme Threshold appears once site name is selected
+			condition = "input.nav_value == 'home'",
+			source("external/page_home.R",local=T)$value
+		),
 		conditionalPanel(
-		condition = "input.site_name != ''",
- 		
-			hr(),
-		h4("Extreme Threshold"),
-		 # Less than or greater than input
-  		selectInput("extreme_direction", "Threshold Direction",
-    	choices = list("Less than (<)" = "lt", "Greater than (>)" = "gt"), 
-    	selected = 1, width='60%'),		
-		### Input for threshold is calculated from server using percentiles
-		uiOutput("extreme_flow"),
-		helpText("Choose a flow threshold and < or > to access Extremes tab."),
-			hr(),
-		h4("Period Comparison"),
-		### Input for Period sliders
-		uiOutput("period_slider_1")	,
-		uiOutput("period_slider_2"),
-		helpText("Choose two historical periods to compare. Period 2 will default to the same duration.")	
-)
-
-    
-    ),
-
-###########################################################################
-## Main panel
-###########################################################################
-    # Display results
-    mainPanel(
-     tabsetPanel(
-
-###########################################################################
-## Time Series Tab
-###########################################################################     
-        tabPanel("Overview", 
-        	### Uncomment for troubleshooting
-        	#textOutput("text1"),
-        	h2("Reconstructed Time Series Overview"),
-        	p("Please select a temporal resolution (Annual or Monthly) and a site on the left to view a reconstructed time series. For monthly reconstructions, it is possible to focus on particular months. These selections will populate the other tabs."),
-        	br(),
-        	dygraphOutput("tsPlot"),
-        	br(),
-        	helpText("Plots are dynamic. Click and drag within the time series to zoom or use the scroll bar at the bottom. Double-click on the graph to zoom out."),
-        	hr(),
-        	h2("Reconstruction Source"),
-            ### Text information          
-			h4(htmlOutput("recon_name_text")),
-			h4(htmlOutput("recon_author_text")),
-			h4(htmlOutput("recon_link_text")),
-			h4(tags$strong("Recommended Citation:"), textOutput("recon_citation_text")),
-			br(),
-        	h2("Observation Source"),
-            ### Text information   
-            h4(htmlOutput("base_name_text")),
-			h4(htmlOutput("base_author_text")),
-			h4(htmlOutput("base_link_text"))		
-        
-        ),
-        
-###########################################################################
-## Extremes Tab
-###########################################################################           
-        tabPanel("Extremes",  
-	        h3("Extreme Flows"),
-			h5(htmlOutput("most_extreme_text")),
-			h5(htmlOutput("date_most_extreme_text")),
-			br(),
-			h5(htmlOutput("threshold_text")),
-			h5(htmlOutput("threshold_exceed_text")),
-			h5(htmlOutput("freq_threshold_exceed_text")),
-			h5(htmlOutput("return_per_text")),
-			br(),
- 	        h3("Extreme Flow Distribution"),       	
-        	plotOutput("extreme_distr"),
-        	h3("Extreme Flow Details"), 
-       		helpText("Flows are sorted by most extreme. You may re-sort by clicking column headers. You may also change the period of interest using the Date Subset drop-down."),
-			DT::dataTableOutput("extreme_table")
-        ), 
-
-###########################################################################
-## Period Comparison Tab
-###########################################################################           
-        tabPanel("Period Comparison",  
-        	h2("Period Comparison"),
-        	helpText("This tab allows a quick comparison between two user-selected historical periods. Select the period on the left.")  ,	
-	      	tableOutput("period_info_table"),
-	      	br(),
-	       	h4("Extreme Flows"),
-	       	tableOutput("period_extreme_table"),
-	       	br(),
-	       	h4("Threshold Exceedances"),
-	       	tableOutput("period_threshold_table"),
-	       	hr(),
-	       	h3("Flow Distribution Comparison"),
-	       	helpText("Flow distributions can be compared between the two periods. Plot will adjust automatically to changes in period. All flows shown on a log scale."),
-	       	plotOutput("period_compar_dist")
-        ), 
-                
-###########################################################################
-## Goodness of Fit Tab
-###########################################################################          
-        tabPanel("Goodness of Fit",       
-
-        	h2("Goodness of Fit"),
-			h3("Summary Statistics"),
-        	p("Reconstructed flows are compared against observed flows at the site during the instrumental period"),
-			tableOutput('gof_table_simple'),
-        	helpText("Fit criteria are: ME (Mean error), RSME (Root Mean Square Error), NSE (Nash-Sutcliffe Efficiency), and R (Pearson Correlation Coefficient). "),        	        	
-	       	h3("Observed vs. Reconstructed Flow"),
-        	htmlOutput("gof_scatter"),
-        	br(),
-        	helpText("Hover over a point to see its date and values. Click and drag to zoom in on an area. Right click to zoom out."),
-
-        	#tableOutput('gof_table'),
-        	#DT::dataTableOutput("gof_table"),
-        	
-        	
-        	h3("Comparison of Flow Distributions"),
-        	plotOutput("gof_distr")        	       
-        
-        ),
-        
-###########################################################################
-## About Tab
-###########################################################################           
-        tabPanel("About",  
-        	h2("About"),
-        	p("The Reconstructed Streamflow Explorer was developed by James Stagge, in conjunction with the Utah State University Water Lab. It was funded in part by Utah Mineral Lease funds"),
-        	br(),
-        	br(),
-        	h3("Citation"),
-        	p("When using the Reconstructed Streamflow Explorer for research or background, please cite as follows:"),
-        	p("Stagge, J.H. (2017) Reconstructed Streamflow Explorer. www.com"),
-        	br(),
-            tags$p("All code for the Reconstructed Streamflow Explorer is available open source on GitHub. Feel free to contribute to this project there: ", tags$a(href="https://github.com/jstagge/paleo_flow_shiny", "https://github.com/jstagge/paleo_flow_shiny"), ".")	,
-        	br(),
-        	br(),
-        	h3("Contact Information"),
-        	tags$p("Please direct any questions to ", tags$a(href="mailto:james.stagge@usu.edu", "James Stagge"), ".")
-        
-        )         
-      
-      )
-    )
-  )
-)
-
+			condition = "input.nav_value == 'extremes'",
+			source("external/page_extremes.R",local=T)$value
+		),
+		conditionalPanel(
+			condition = "input.nav_value == 'periods'",
+			source("external/page_periods.R",local=T)$value
+		),		
+		conditionalPanel(
+			condition = "input.nav_value == 'gof'",
+			source("external/page_gof.R",local=T)$value
+		),
+		conditionalPanel(
+			condition = "input.nav_value == 'about'",
+			source("external/page_about.R",local=T)$value
+		)			
+	)
+	#footer=HTML("<div class = 'navbar navbar-fixed-bottom' style='line-height:30px; height:30px;'><div class = 'navbar-inner'><div class = 'container footer-margin-top'><p class = 'muted pull-left'>Created by hwhd</p> <p class = 'muted pull-right'>MyCompany  2014</p> </div></div> </div> ")
+))

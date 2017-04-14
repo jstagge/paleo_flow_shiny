@@ -18,6 +18,9 @@ https://www.digitalocean.com/community/tutorials/how-to-set-up-a-host-name-with-
 
 To update the site list
 ssh into digital ocean (138.68.244.160)
+
+ssh 138.68.244.160
+
 run the following
 
 sudo service shiny-server restart
@@ -28,3 +31,9 @@ To update packages
 sudo apt-get dist-upgrade
 sudo apt-get update
 sudo apt-get upgrade
+
+
+To add packages
+sudo su - -c "R -e \"install.packages('png', repos='http://cran.rstudio.com/')\""
+
+

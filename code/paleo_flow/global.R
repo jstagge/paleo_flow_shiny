@@ -1,4 +1,3 @@
-
 ###########################################################################
 ## Set the Paths
 ###########################################################################
@@ -17,14 +16,17 @@ require(reshape2)
 ### Load these functions for this unique project
 require(ggplot2)
 suppressPackageStartupMessages(library(googleVis))
-require(shiny)
 library(dygraphs)
 require(shinythemes)
 require(lubridate)
 require(xts)
-library(googleCharts)
+#library(googleCharts)
 library(MASS)
 library(scales)
+library(shinythemes)
+library(png)
+require(shiny)
+
 
 ### Load project specific functions
 #file.sources = list.files(function_path, pattern="*.R", recursive=TRUE)
@@ -35,7 +37,7 @@ source("./functions/gof_ts.R")
 source("./functions/read_in_paleo.R")
 source("./functions/round_df.R")
 
-
+source("external/navbar_func.R")
 
 ###########################################################################
 ## Read in site information
