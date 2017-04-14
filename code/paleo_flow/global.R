@@ -36,6 +36,7 @@ source("./functions/create_site_list.R")
 source("./functions/gof_ts.R")
 source("./functions/read_in_paleo.R")
 source("./functions/round_df.R")
+source("./functions/dygraph-extra-shiny.R")
 
 source("external/navbar_func.R")
 

@@ -547,7 +547,8 @@ period_compar_dist_df <- reactive({
     dyAxis("y", label = paste0("Monthly Mean Discharge (",flow_units(),")"), valueRange=y_lims()) %>%
     dySeries("Observed", color="#e41a1c", strokeWidth=0.8)  %>%
     dySeries("Monthly_Recon", color="#404040", strokeWidth = 0.8) %>% 
-    dySeries("Annual_Recon", color="#377eb8", strokeWidth = 1.2, strokePattern = "dashed")
+    dySeries("Annual_Recon", color="#377eb8", strokeWidth = 1.2, strokePattern = "dashed") %>%
+    dyCallbacks(drawCallback = dyRegister())
   	})      
   } else {
   
@@ -560,7 +561,8 @@ period_compar_dist_df <- reactive({
     dyAxis(name="x",axisLabelFormatter = "function(d){ return d.getFullYear() }"  ) %>%
     dyAxis("y", label = paste0("Annual Mean Discharge (",flow_units(),")"), valueRange=y_lims()) %>%
     dySeries("Observed", color="#e41a1c", strokeWidth=0.8)  %>%
-    dySeries("Annual_Recon", color="#404040", strokeWidth = 0.8)
+    dySeries("Annual_Recon", color="#404040", strokeWidth = 0.8) %>%
+    dyCallbacks(drawCallback = dyRegister())
   	})    
   }
 

@@ -7,6 +7,8 @@ column(9,
 			p("Please select a temporal resolution (Annual or Monthly) and a site on the left to view a reconstructed time series. For monthly reconstructions, it is possible to focus on particular months. These selections will populate the other tabs.")
 	)),
 	column(12,
+		fluidRow(column(2,offset=10,
+			dyDownload("tsPlot", "Download Plot", asbutton = TRUE, class="btn-primary btn-sm"))),
 		dygraphOutput("tsPlot"),
         br()),
     fluidRow(column(10, offset=1,    

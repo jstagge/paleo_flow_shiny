@@ -13,7 +13,8 @@ shinyUI(navbarPageWithText(
   	# Google Analytics script
   	includeScript("google-analytics.js"),
   	# This line loads the Google Charts JS library
-  	#googleChartsInit(),	
+  	#googleChartsInit(),
+  	includeScript("www/dygraph-extra.js"),	
     tags$style(HTML("   "))
   ),
   	selected="home",
