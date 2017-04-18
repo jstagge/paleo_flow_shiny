@@ -219,15 +219,25 @@ gof_df_temp <- reactive({
   	if(max(paleo_ts_subset()$Observed, na.rm=TRUE) > 0) {
   		### Create dataframe
   		gof_df <- data.frame(paleo_ts_subset())
-  		gof_df <- data.frame(Observed=gof_df$Observed, Reconstructed=gof_df$Monthly_Rec, Month=paleo_ts_subset()$Month, Year=paleo_ts_subset()$Year)
-	
+  		
+  		### Separate gof base if Annual or Monthly
+		if (time_resolution() == "monthly") {
+		gof_df <- data.frame(Observed=gof_df$Observed, Reconstructed=gof_df$Monthly_Rec, Month=paleo_ts_subset()$Month, Year=paleo_ts_subset()$Year)
+		paleo_dates <- paste0("", gof_df$Month, " / ", gof_df$Year, "")
+ 		
+		} else if (time_resolution() == "annual"){
+		gof_df <- data.frame(Observed=gof_df$Observed, Reconstructed=gof_df$Annual_Recon, Year=paleo_ts_subset()$Year)
+		paleo_dates <- paste0(gof_df$Year, "")
+ 		
+		}
+		
   	  	### Cut to common reference period
   	  	refer_test <- complete.cases(gof_df[,c("Observed","Reconstructed")])
  	  	gof_df <- gof_df[refer_test,]
-
+ 	  	paleo_dates <- paleo_dates[refer_test]
+		
   		### Add a column for tooltips
   		### Had to add an extra span because the results kept wrapping around
- 		paleo_dates <- paste0("", gof_df$Month, " / ", gof_df$Year, "")
  		gof_df$Reconstructed.tooltip <- paste0("<b>", paleo_dates,"</b><br>Observed: ", signif(gof_df$Observed,3),"<br>Reconstructed: ", signif(gof_df$Reconstructed,2), " <span style='display:inline-block; width: 5;'></span>" )
  	  	gof_df
  	  	}		
@@ -296,14 +306,14 @@ gof_table_df <- reactive({
 ## Create the extremes input
 ###########################################################################
 ### Suggest the maximum flow in subset
-min_suggest <- reactive({ floor(min(paleo_ts_subset()$Monthly_Recon, na.rm=TRUE)) })
-max_suggest <- reactive({ ceiling(max(paleo_ts_subset()$Monthly_Recon, na.rm=TRUE)) })
+min_suggest <- reactive({ floor(min(gof_df_temp()$Reconstructed, na.rm=TRUE)) })
+max_suggest <- reactive({ ceiling(max(gof_df_temp()$Reconstructed, na.rm=TRUE)) })
 
 ### Suggest an extreme flow based on the 15th or 85 percentile (depending if gt or less than)
 suggest_extreme <- reactive({ if (input$extreme_direction == "gt") {
-			quantile(paleo_ts_subset()$Monthly_Recon, 0.85, na.rm=TRUE) 
+			quantile(gof_df_temp()$Reconstructed, 0.85, na.rm=TRUE) 
 		} else {
-			quantile(paleo_ts_subset()$Monthly_Recon, 0.15, na.rm=TRUE) 
+			quantile(gof_df_temp()$Reconstructed, 0.15, na.rm=TRUE) 
 		}
 	})
 	
