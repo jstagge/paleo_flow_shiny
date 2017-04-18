@@ -35,6 +35,17 @@ subset_input <- reactive({ as.numeric(input$time_subset) })
 ### Extract time resolution
 time_resolution <- reactive({input$time_resolution})
 
+### Set name of column for reconstruction
+rec_col_name <- reactive({
+	if (time_resolution() == "monthly") {
+		"Monthly_Recon"
+	} else if (time_resolution() == "annual") {
+		"Annual_Recon"
+	}
+})
+
+
+
 ###########################################################################
 ## Determine site information
 ###########################################################################
@@ -219,22 +230,19 @@ gof_df_temp <- reactive({
   	if(max(paleo_ts_subset()$Observed, na.rm=TRUE) > 0) {
   		### Create dataframe
   		gof_df <- data.frame(paleo_ts_subset())
-  		
-  		### Separate gof base if Annual or Monthly
-		if (time_resolution() == "monthly") {
-		gof_df <- data.frame(Observed=gof_df$Observed, Reconstructed=gof_df$Monthly_Rec, Month=paleo_ts_subset()$Month, Year=paleo_ts_subset()$Year)
-		paleo_dates <- paste0("", gof_df$Month, " / ", gof_df$Year, "")
- 		
-		} else if (time_resolution() == "annual"){
-		gof_df <- data.frame(Observed=gof_df$Observed, Reconstructed=gof_df$Annual_Recon, Year=paleo_ts_subset()$Year)
-		paleo_dates <- paste0(gof_df$Year, "")
- 		
-		}
+  				
+  		gof_df <- data.frame(Observed=gof_df$Observed, Reconstructed=gof_df[,rec_col_name()], Month=paleo_ts_subset()$Month, Year=paleo_ts_subset()$Year)
 		
   	  	### Cut to common reference period
   	  	refer_test <- complete.cases(gof_df[,c("Observed","Reconstructed")])
  	  	gof_df <- gof_df[refer_test,]
- 	  	paleo_dates <- paleo_dates[refer_test]
+ 	  	
+ 	  	### Separate paleo_date if Annual or Monthly
+		if (time_resolution() == "monthly") {
+			paleo_dates <- paste0("", gof_df$Month, " / ", gof_df$Year, "")
+		} else if (time_resolution() == "annual"){
+			paleo_dates <- paste0(gof_df$Year, "")		
+		}
 		
   		### Add a column for tooltips
   		### Had to add an extra span because the results kept wrapping around
@@ -306,8 +314,8 @@ gof_table_df <- reactive({
 ## Create the extremes input
 ###########################################################################
 ### Suggest the maximum flow in subset
-min_suggest <- reactive({ floor(min(gof_df_temp()$Reconstructed, na.rm=TRUE)) })
-max_suggest <- reactive({ ceiling(max(gof_df_temp()$Reconstructed, na.rm=TRUE)) })
+min_suggest <- reactive({ floor(min(paleo_ts_plot(), na.rm=TRUE)) })
+max_suggest <- reactive({ ceiling(max(paleo_ts_plot(), na.rm=TRUE)) })
 
 ### Suggest an extreme flow based on the 15th or 85 percentile (depending if gt or less than)
 suggest_extreme <- reactive({ if (input$extreme_direction == "gt") {
@@ -353,26 +361,27 @@ sliderInput("period_slider_2", label = "Period 2 (years)", min = first_year(),
 ## Calculate extreme output
 ###########################################################################
 extremes_table <- reactive({ 
-	### If greater than, subset to greater than and sort in descending order
+		### If greater than, subset to greater than and sort in descending order
 		if (input$extreme_direction == "gt") {
-			### Subset table 
-			extremes_table <- subset(paleo_ts_subset(), Monthly_Recon > input$extreme_flow)
-			### Resort table
-			extremes_table <- data.frame(extremes_table)
-			extremes_table <- extremes_table[with(extremes_table, order(Monthly_Recon, Year)),]			
-	### If less than, subset to greater than and sort in descending order
+			extreme_test <- paleo_ts_subset()[,rec_col_name()] > input$extreme_flow
 		} else {
-			### Subset table 
-			extremes_table <- subset(paleo_ts_subset(), Monthly_Recon < input$extreme_flow)
-			### Resort table
-			extremes_table <- data.frame(extremes_table)
-			extremes_table <- extremes_table[with(extremes_table, order(Monthly_Recon, Year)),]
+			extreme_test <- paleo_ts_subset()[,rec_col_name()] < input$extreme_flow
+		}
+		### Subset table 
+		extremes_table <- paleo_ts_subset()[extreme_test,]	
+		extremes_table <- data.frame(extremes_table)
+		
+		### Resort table
+		if (input$extreme_direction == "gt") {
+		extremes_table <- extremes_table[with(extremes_table, order(-get(rec_col_name()), Year)),]
+		} else {
+		extremes_table <- extremes_table[with(extremes_table, order(get(rec_col_name()), Year)),]
 		}
 		
 	### Reorganize columns
 	date_column <- as.Date(paste0(extremes_table$Year, "/",extremes_table$Month, "/15"))
 	date_column <- format(date_column, "%b %Y")
-	extremes_table <- data.frame(Date=date_column, Year=extremes_table$Year, Month=extremes_table$Month, "Reconst_Flow"=signif(extremes_table$Monthly_Recon,4), Observed=signif(extremes_table$Observed,4))	
+	extremes_table <- data.frame(Date=date_column, Year=extremes_table$Year, Month=extremes_table$Month, "Reconst_Flow"=signif(extremes_table[,rec_col_name()],4), Observed=signif(extremes_table$Observed,4))	
 		
 	### Return extremes table
 	extremes_table 
@@ -383,7 +392,7 @@ most_extreme <- reactive({extremes_table()$Reconst_Flow[1]})
 date_most_extreme <- reactive({as.character(extremes_table()$Date[1])})
 
 threshold_exceed <- reactive({dim(extremes_table())[1]})
-length_time_series <- reactive({sum(paleo_ts_subset()$Monthly_Rec > 0, na.rm=TRUE)})
+length_time_series <- reactive({sum(paleo_ts_subset()[,rec_col_name()] > 0, na.rm=TRUE)})
 freq_threshold_exceed <- reactive({threshold_exceed()/(1+length_time_series())})
 return_per <- reactive({1/freq_threshold_exceed()})
 
@@ -438,18 +447,18 @@ period_info_df <- reactive({
 ### Create a dataframe for Period Extreme Comparison
 period_extreme_df <- reactive({  
 	### Max flows
-   max_p1 <- signif(max(period_1_subset()$Monthly_Recon, na.rm=TRUE), 4)
-   max_p2 <- signif(max(period_2_subset()$Monthly_Recon, na.rm=TRUE), 4)
+   max_p1 <- signif(max(period_1_subset()[,rec_col_name()], na.rm=TRUE), 4)
+   max_p2 <- signif(max(period_2_subset()[,rec_col_name()], na.rm=TRUE), 4)
    
-   date_max_p1 <- period_1_subset()$Date[which.max(period_1_subset()$Monthly_Recon)]
-   date_max_p2 <- period_2_subset()$Date[which.max(period_2_subset()$Monthly_Recon)]
+   date_max_p1 <- period_1_subset()$Date[which.max(period_1_subset()[,rec_col_name()])]
+   date_max_p2 <- period_2_subset()$Date[which.max(period_2_subset()[,rec_col_name()])]
 
 	### Min flows
-   min_p1 <- signif(min(period_1_subset()$Monthly_Recon, na.rm=TRUE), 4)
-   min_p2 <- signif(min(period_2_subset()$Monthly_Recon, na.rm=TRUE), 4)
+   min_p1 <- signif(min(period_1_subset()[,rec_col_name()], na.rm=TRUE), 4)
+   min_p2 <- signif(min(period_2_subset()[,rec_col_name()], na.rm=TRUE), 4)
    
-   date_min_p1 <- period_1_subset()$Date[which.min(period_1_subset()$Monthly_Recon)]
-   date_min_p2 <- period_2_subset()$Date[which.min(period_2_subset()$Monthly_Recon)]
+   date_min_p1 <- period_1_subset()$Date[which.min(period_1_subset()[,rec_col_name()])]
+   date_min_p2 <- period_2_subset()$Date[which.min(period_2_subset()[,rec_col_name()])]
    
   ### Compose data frame
     data.frame(
@@ -474,15 +483,15 @@ period_extreme_df <- reactive({
 period_threshold_df <- reactive({  
    ### Threshold Exceedances
    if (input$extreme_direction == "gt") {
-		threshold_exceed_p1 <- sum(period_1_subset()$Monthly_Recon > input$extreme_flow, na.rm=TRUE)
-		threshold_exceed_p2 <- sum(period_2_subset()$Monthly_Recon > input$extreme_flow, na.rm=TRUE)
+		threshold_exceed_p1 <- sum(period_1_subset()[,rec_col_name()] > input$extreme_flow, na.rm=TRUE)
+		threshold_exceed_p2 <- sum(period_2_subset()[,rec_col_name()] > input$extreme_flow, na.rm=TRUE)
 	} else {
-		threshold_exceed_p1 <- sum(period_1_subset()$Monthly_Recon < input$extreme_flow, na.rm=TRUE)
-		threshold_exceed_p2 <- sum(period_2_subset()$Monthly_Recon < input$extreme_flow, na.rm=TRUE)
+		threshold_exceed_p1 <- sum(period_1_subset()[,rec_col_name()] < input$extreme_flow, na.rm=TRUE)
+		threshold_exceed_p2 <- sum(period_2_subset()[,rec_col_name()] < input$extreme_flow, na.rm=TRUE)
 	}
 	
-	length_p1 <- sum(period_1_subset()$Monthly_Recon > 0, na.rm=TRUE)
-	length_p2 <- sum(period_2_subset()$Monthly_Recon > 0, na.rm=TRUE)
+	length_p1 <- sum(period_1_subset()[,rec_col_name()] > 0, na.rm=TRUE)
+	length_p2 <- sum(period_2_subset()[,rec_col_name()] > 0, na.rm=TRUE)
 	
 	freq_threshold_p1 <- threshold_exceed_p1/(1+length_p1)
 	freq_threshold_p2 <- threshold_exceed_p2/(1+length_p2)
@@ -515,15 +524,15 @@ period_compar_dist_df <- reactive({
 		period_2_subset <- period_2_subset()
 		
 		### Remove NAs
-		period_1_subset <- period_1_subset[!is.na(period_1_subset$Monthly_Recon),]
-		period_2_subset <- period_2_subset[!is.na(period_2_subset$Monthly_Recon),]
+		period_1_subset <- period_1_subset[!is.na(period_1_subset[,rec_col_name()]),]
+		period_2_subset <- period_2_subset[!is.na(period_2_subset[,rec_col_name()]),]
 				
 		### Calculate plotting position
-		period_1_subset$rank <- rank(period_1_subset$Monthly_Recon)
+		period_1_subset$rank <- rank(period_1_subset[,rec_col_name()])
 		period_1_subset$plot_pos <- period_1_subset$rank/(dim(period_1_subset)[1] + 1)
 		period_1_subset$Period <- period_vec()[1]
 		
-		period_2_subset$rank <- rank(period_2_subset$Monthly_Recon)
+		period_2_subset$rank <- rank(period_2_subset[,rec_col_name()])
 		period_2_subset$plot_pos <- period_2_subset$rank/(dim(period_2_subset)[1] + 1)
 		period_2_subset$Period <- period_vec()[2]
 		
@@ -682,7 +691,7 @@ output$period_threshold_table <-renderTable({
 ###########################################################################   
  output$period_compar_dist <-renderPlot({
  		### Create the plot
-  		p <- ggplot(period_compar_dist_df(), aes(x=plot_pos*100, y=Monthly_Recon, colour=Period))
+  		p <- ggplot(period_compar_dist_df(), aes(x=plot_pos*100, y=get(rec_col_name()), colour=Period))
   		p <- p + geom_line()
   		p <- p + scale_x_continuous(name="Percentile (%)")
   		#p <- p + scale_y_log10(name=paste0("Streamflow (",flow_units(),")"))
