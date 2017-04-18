@@ -3,9 +3,10 @@ column(9,
 	### Uncomment for troubleshooting
     #textOutput("text1"),
     	fluidRow(h2("Reconstructed Time Series Overview")),
-		fluidRow(
-			p("Please select a temporal resolution (Annual or Monthly) and a site on the left to view a reconstructed time series. For monthly reconstructions, it is possible to focus on particular months. These selections will populate the other tabs.")
-	)),
+    	conditionalPanel(
+			condition = "input.site_name == ''",
+			fluidRow(column(12, HTML('<div class="alert alert-warning" role="alert">On the left, please select Annual/Monthly reconstruction and a Site to begin.</div>')))
+		)),
 	column(12,
 		fluidRow(column(2,offset=10,
 			dyDownload("tsPlot", "Download Plot", asbutton = TRUE, class="btn-primary btn-sm"))),

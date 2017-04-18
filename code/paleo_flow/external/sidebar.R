@@ -57,5 +57,8 @@ column(3,
    		downloadButton('downloadData', 'Download Data', class="btn-primary")
 		
 	
-	)
+	),
+	fluidRow(column(12,
+			p("For monthly reconstructions, it is possible to focus on particular months. Selections on the left will populate all other tabs.")
+	))
 )
