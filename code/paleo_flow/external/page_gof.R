@@ -6,6 +6,12 @@ column(9,
 	column(12,
 	h2("Goodness of Fit"),
 			h3("Summary Statistics"),
+			
+			### Add a loading notice
+			conditionalPanel(
+				condition="$('html').hasClass('shiny-busy')",
+				fluidRow(column(3, HTML('<div class="alert alert-info" role="alert">Data loading.</div>')))
+			),
         	p("Reconstructed flows are compared against observed flows at the site during the instrumental period"),
 			tableOutput('gof_table_simple'),
         	helpText("Fit criteria are: ME (Mean error), RSME (Root Mean Square Error), NSE (Nash-Sutcliffe Efficiency), and R (Pearson Correlation Coefficient). "),        	        	

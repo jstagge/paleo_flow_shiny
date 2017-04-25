@@ -5,6 +5,11 @@
 column(9,
 	column(12,
         	h2("Period Comparison"),
+        	### Add a loading notice
+			conditionalPanel(
+				condition="$('html').hasClass('shiny-busy')",
+				fluidRow(column(3, HTML('<div class="alert alert-info" role="alert">Data loading.</div>')))
+			),
         	helpText("This tab allows a quick comparison between two user-selected historical periods. Select the period on the left.")  ,	
 	      	tableOutput("period_info_table"),
 	      	fluidRow(column(6,

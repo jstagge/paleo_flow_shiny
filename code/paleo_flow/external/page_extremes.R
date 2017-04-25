@@ -7,6 +7,12 @@ column(9,
 		fluidRow(
 		h3("Extreme Flows")
 		),
+		### Add a loading notice
+		conditionalPanel(
+			condition="$('html').hasClass('shiny-busy')",
+			fluidRow(column(3, HTML('<div class="alert alert-info" role="alert">Data loading.</div>')))
+		),
+	
 		fluidRow(column(5,
 			h5(htmlOutput("most_extreme_text")),
 			h5(htmlOutput("date_most_extreme_text"))

@@ -17,6 +17,13 @@ shinyUI(navbarPageWithText(
   	includeScript("www/dygraph-extra.js"),	
     tags$style(HTML("   "))
   ),
+  ### Prevent error messages
+  tags$style(type="text/css",
+  ".shiny-output-error { visibility: hidden; }",
+  ".shiny-output-error:before { visibility: hidden; }"
+	),
+
+
   	selected="home",
   	tabPanel("Home", value="home"),
   	tabPanel("Extremes", value="extremes"),
