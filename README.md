@@ -2,7 +2,7 @@
 
 This repository contains code designed to create a Shiny app to easily view streamflow reconstructions. These reconstructions can be several hundred years old, so it is useful to be able to interact with the time series (zooming or summarizing as needed).  
 
-The resulting app is available at (https://jstagge.shinyapps.io/paleo_flow).
+The resulting app is available at (http://www.paleoflow.org/).
 
 ## Getting Started
 
