@@ -82,5 +82,5 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 * Thank you to Justin DeRose for providing several tree-ring chronologies.
 * Additional thanks to the International Tree-Ring Data Bank for providing further chronologies and global climate reconstructions. 
 
-
+[![DOI](https://zenodo.org/badge/84977163.svg)](https://zenodo.org/badge/latestdoi/84977163)
 [![Analytics](https://ga-beacon.appspot.com/UA-93682740-1/paleo_flow_shiny/readme)](https://github.com/igrigorik/ga-beacon)
