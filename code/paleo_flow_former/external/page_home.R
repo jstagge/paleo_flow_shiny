@@ -16,11 +16,6 @@ column(9,
         helpText("Plots are dynamic. Click and drag within the time series to zoom or use the scroll bar at the bottom. Double-click on the graph to zoom out.")
 	)),
 	fluidRow(
-	column(12, h3("Reconstruction Location")),
-	column(8,offset=2,
-		leafletOutput("mymap")
-	)),
-	fluidRow(
 		column(6,
 			h3("Reconstruction Source"),
             ### Text information          

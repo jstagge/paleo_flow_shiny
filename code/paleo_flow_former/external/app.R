@@ -76,7 +76,6 @@ site_info <- reactive({
 
 ### Extract Site Name
 site_name <- reactive({ site_info()$site_name })
-col_name <- reactive({ site_info()$col_name })
 
 ###########################################################################
 ## Extract citation information
@@ -104,33 +103,22 @@ output$base_link_text <- renderUI({ HTML(paste0('<strong>Source Link </strong> :
 ###########################################################################
 ### Include a catch for before you select a site (blank plot)
 paleo_ts_temp <- reactive({
-	### If no data is selected
 	if (list_id()=="None"){
 		### Generate a blank graph
 		paleo_ts_temp <- data.frame(Observed=rep(NA,300), Annual_Recon=rep(NA,300), Monthly_Recon=rep(NA,300))
 		ts(as.matrix(paleo_ts_temp), start=c(1700,1), frequency=12)
-	
-	### If data is annual
-	} else if (time_resolution() == "annual"){	
+	} else {
 		### Read time series from list 
-		paleo_ts_temp <- data.frame(Month=1, Year=annual_flow_obs$year, Observed=annual_flow_obs[, col_name()], Annual_Recon=annual_flow_rec[, col_name()])	
-		### Find first non NA and cut to length
-		first_non_na <- min(which(!is.na(paleo_ts_temp$Annual_Recon)))
-		paleo_ts_temp <- paleo_ts_temp[seq(first_non_na, dim(paleo_ts_temp)[1]), ]
-		### Create date vector and return time series
+		paleo_ts_location <- file.path(data_path, site_info()$resolution)
+		paleo_ts_location <- file.path(paleo_ts_location, paste0(site_info()$file_name,".csv"))
+		paleo_ts_temp <- read.csv(paleo_ts_location) 
+		
+		### Create date vector and apply to time series
 		date_vec <- as.POSIXct(paste0(paleo_ts_temp$Year,"/",paleo_ts_temp$Month, "/15"), format="%Y/%m/%d")
-		xts(paleo_ts_temp, date_vec)
-	
-	### If data is monthly	
-	} else if (time_resolution() == "monthly"){
-		### Read time series from list 
-		paleo_ts_temp <- data.frame(Month=monthly_flow_obs$month, Year=monthly_flow_obs$year, Observed=monthly_flow_obs[, col_name()], Annual_Recon=monthly_flow_rec_annual[, col_name()], Monthly_Recon=monthly_flow_rec_monthly[, col_name()] )	
-		### Find first non NA and cut to length
-		first_non_na <- min(which(!is.na(paleo_ts_temp$Monthly_Recon)))
-		paleo_ts_temp <- paleo_ts_temp[seq(first_non_na, dim(paleo_ts_temp)[1]), ]
-		### Create date vector and return time series
-		date_vec <- as.POSIXct(paste0(paleo_ts_temp$Year,"/",paleo_ts_temp$Month, "/15"), format="%Y/%m/%d")
-		xts(paleo_ts_temp, date_vec)	
+		paleo_ts_temp <- xts(paleo_ts_temp, date_vec)
+
+		### Return temp
+		paleo_ts_temp
 	}
 })
 		
@@ -142,7 +130,7 @@ paleo_ts_dates <- reactive({
 })
 
 year_month <- reactive({
-		as.Date(paste0(as.numeric(paleo_ts_temp()$Year),"-", as.numeric(paleo_ts_temp()$Month),"-15"))
+		year_month <- as.Date(paste0(as.numeric(paleo_ts_temp()$Year),"-", as.numeric(paleo_ts_temp()$Month),"-15"))
 })
 
 ###########################################################################
@@ -181,7 +169,6 @@ paleo_ts_full <- reactive({
 	### Scale columns for units
 	paleo_ts_full <- paleo_ts_temp()
 	paleo_ts_full[,cols_to_scale()] <- paleo_ts_full[,cols_to_scale()]*unit_conversion()
-	
 	paleo_ts_full
 })
 
@@ -219,7 +206,7 @@ paleo_ts_plot <- reactive({
 ## Prepare for download
 ###########################################################################
  output$downloadData <- downloadHandler(
-    filename = function() { paste(site_info()$col_name, '_',flow_units(),'.csv', sep='') },
+    filename = function() { paste(site_info()$site_id, '_',flow_units(),'.csv', sep='') },
     content = function(file) {
       write.csv(paleo_ts_subset(), file)
     }
@@ -715,34 +702,7 @@ output$period_threshold_table <-renderTable({
    })	
 
 
-
-###########################################################################
-## Output to Map
-###########################################################################   
-
-
-selected_icon <- makeAwesomeIcon(icon = "star", library = "fa", markerColor = "lightgreen")
-
-map.old <- reactive({ 
-	if (time_resolution() == "monthly") {
-		map <- leaflet(data=data.frame(lat=site_monthly$lat, long=site_monthly$lon, name=site_monthly$site_name ))
-	} else {
-		map <- leaflet(data=data.frame(lat=site_annual$lat, long=site_annual$lon, name=site_annual$site_name ))
-	}
-
-	map <- map %>% addMarkers(~long, ~lat, popup = ~as.character(name), label = ~as.character(name)) 
-	#map <- map %>% addCircleMarkers(~long, ~lat, popup = ~as.character(name), label = ~as.character(name))
-	map <- map %>%  addAwesomeMarkers(lng=site_info()$lon, lat=site_info()$lat, label=site_info()$name, icon = selected_icon)
-	map <- map %>% setView(lng = site_info()$lon, lat = site_info()$lat, zoom = 8)
-	#map <- map  %>% addTiles()
-	map <- map  %>% addProviderTiles(providers$Esri.NatGeoWorldMap)
-	map
-})
-
-output$mymap <- renderLeaflet({ map.old() })
-
-
-
+ 
 ###########################################################################
 ## For troubleshooting
 ###########################################################################   
@@ -752,5 +712,6 @@ output$mymap <- renderLeaflet({ map.old() })
 #    })
 
  
+  
   
   

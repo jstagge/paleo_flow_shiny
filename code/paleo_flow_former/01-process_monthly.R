@@ -114,8 +114,6 @@ site_name <- site_name_list[n]
 recons_file_name <- recons_file_name_list[n]
 month_reconst_file <- month_reconst_file_list[n]
 
-col_name <- tolower(unlist(strsplit(recons_file_name, "flow.txt")))
-
 ### Create date information
 date_df <- expand.grid(year=seq(1,2017), month=seq(1,12))
 date_df$water_year <- usgs_wateryear(year=date_df$year, month=date_df$month)
@@ -174,67 +172,20 @@ flow_plot_merge <- flow_plot_merge[order(flow_plot_merge$date),]
 #flow_plot <- data.frame(Observed=flow_plot_merge$monthly_mean, Annual_Recon = flow_plot_merge$annual_m3s, Monthly_Recon = flow_plot_merge$flow_rec_m3s) 
 flow_plot <- data.frame(Month=month(flow_plot_merge$date), Year=year(flow_plot_merge$date), Observed=flow_plot_merge$monthly_mean, Annual_Recon = flow_plot_merge$annual_m3s, Monthly_Recon = flow_plot_merge$flow_rec_m3s) 
 
-
-
-
-flow_obs <- data.frame(Month=flow_plot$Month,Year=flow_plot$Year, Observed=flow_plot$Observed)
-names(flow_obs) <- c("month", "year", col_name)
-
-flow_month_recon <- data.frame(Month=flow_plot$Month,Year=flow_plot$Year, Observed=flow_plot$Monthly_Recon)
-names(flow_month_recon) <- c("month", "year", col_name)
-
-flow_annual_recon <- data.frame(Month=flow_plot$Month,Year=flow_plot$Year, Observed=flow_plot$Annual_Recon)
-names(flow_annual_recon) <- c("month", "year", col_name)
-
-
-
-
 ###########################
-###  Merge time series
-###########################
-if (n ==1) {
-	flow_obs_merge <- flow_obs
-	flow_month_recon_merge <- flow_month_recon
-	flow_annual_recon_merge <- flow_annual_recon
-} else {
-	flow_obs_merge <- merge(x=flow_obs_merge, y=flow_obs, by=c("month", "year"), all=TRUE)
-	flow_month_recon_merge <- merge(x=flow_month_recon_merge, y=flow_month_recon, by=c("month", "year"), all=TRUE)
-	flow_annual_recon_merge <- merge(x=flow_annual_recon_merge, y=flow_annual_recon, by=c("month", "year"), all=TRUE)
+###  Shorten to 20 years past end of monthly reconstruction
+########################
+NonNAindex <- which(!is.na(flow_plot$Monthly_Recon))
+firstNonNA <- min(NonNAindex)
+
+if ((firstNonNA -20) > 1){
+	cut_series <- seq((firstNonNA-20), dim(flow_plot)[1])
+	flow_plot <- flow_plot[cut_series, ]
 }
 
-
-
+###########################
+###  Write to file
+########################
+write.csv(flow_plot, file.path(write_output_path,paste0("flow_",site_id,".csv")), row.names=FALSE)
+write.csv(flow_plot, file.path(app_output_path,paste0("monthly/flow_",site_id,".csv")), row.names=FALSE)
 }
-
-
-
-###########################################################################
-## List all possible years and re-sort the dataframe
-###########################################################################
-### Create a dataframe of year sequence
-min_years <- min(c(flow_month_recon_merge$year,flow_annual_recon_merge$year,flow_obs_merge$year), na.rm=TRUE)
-max_years <- max(c(flow_month_recon_merge$year,flow_annual_recon_merge$year,flow_obs_merge$year), na.rm=TRUE)
-all_years <- seq(min_years, max_years)
-all_years <- expand.grid(month=seq(1,12), year = all_years)
-
-### Merge back with years and re-sort
-flow_obs_merge <- merge(x=all_years, y=flow_obs_merge, by=c("month","year"), all.x=TRUE)
-flow_obs_merge <- flow_obs_merge[with(flow_obs_merge, order(year, month)), ]
-
-### Merge back with years and re-sort
-flow_month_recon_merge <- merge(x=all_years, y=flow_month_recon_merge, by=c("month","year"), all.x=TRUE)
-flow_month_recon_merge <- flow_month_recon_merge[with(flow_month_recon_merge, order(year, month)), ]
-
-### Merge back with years and re-sort
-flow_annual_recon_merge <- merge(x=all_years, y=flow_annual_recon_merge, by=c("month","year"), all.x=TRUE)
-flow_annual_recon_merge <- flow_annual_recon_merge[with(flow_annual_recon_merge, order(year, month)), ]
-
-
-
-write.csv(flow_obs_merge, file.path(write_output_path,"flow_obs.csv"), row.names=FALSE)
-write.csv(flow_month_recon_merge, file.path(write_output_path,"flow_rec_month.csv"), row.names=FALSE)
-write.csv(flow_annual_recon_merge, file.path(write_output_path,"flow_rec_annual.csv"), row.names=FALSE)
-
-
-
-
