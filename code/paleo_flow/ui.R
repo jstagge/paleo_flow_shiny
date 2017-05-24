@@ -23,6 +23,11 @@ shinyUI(navbarPageWithText(
   ".shiny-output-error:before { visibility: hidden; }"
 	),
 
+  ### Longer drawdown menus
+  tags$style(type="text/css",
+   ".selectize-dropdown-content {max-height: 400px;}"
+	),
+
 
   	selected="home",
   	tabPanel("Home", value="home"),
