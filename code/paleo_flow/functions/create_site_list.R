@@ -13,7 +13,7 @@
 # *------------------------------------------------------------------
 
 
-create_site_list <- function(file_name, res="monthly"){ 
+create_site_list <- function(file_name, res="all"){ 
 
 ### First, subset to only resolution
 file_name_subset <- subset(file_name, resolution==res)

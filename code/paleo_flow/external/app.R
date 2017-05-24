@@ -2,30 +2,39 @@
 ###########################################################################
 ## Dynamic Input for Date Subset and Sites
 ###########################################################################
- observe({
-    x <- input$time_resolution
+### Create selector for site id
+output$ui <- renderUI({
+	### If no time resolution is selected
+    if (is.null(input$time_resolution))
+      return()
+	### If time resolution is monthly
+	if(input$time_resolution=='monthly'){
+		selectizeInput("site_name", 'Site Location',
+        	choices = create_site_list(site_all, res="monthly"),
+   			selected = NULL,
+   			multiple = FALSE,
+   			options = list(placeholder = 'Select site location')
+   		)	
+	### If time resolution is annual
+	} else {
+		selectizeInput("site_name", 'Site Location',
+ 	       choices = create_site_list(site_all, res="annual"),
+    		selected = NULL,
+   			multiple = FALSE,
+   			options = list(placeholder = 'Select site location')
+   		)
+	}
+})
 
-    if (x == "annual"){
-    # Can also set the label and select items
-    updateSelectInput(session, "time_subset", "Date Subset",
-      	choices = c(`Annual` = '0')
-		)
-    }
-    
-    if (x == "monthly"){
-    # Can also set the label and select items
-    updateSelectizeInput(session, "time_subset", "Date Subset",
-      	choices = c(`Full Timeseries` = '0', `January` = '1', `February` = '2', `March` = '3', `April` = '4', `May` = '5', `June` = '6', `July` = '7', `August` = '8', `September` = '9', `October` = '10', `November` = '11', `December` = '12' )
-		)
-    }
-    
- 	choice_list <- 
-    # Can also set the label and select items
-    updateSelectizeInput(session, "site_name", "Site Location",
-      	choices = create_site_list(site_all, res=x)
-		)   
-  })
-
+### Create selector for time subset
+output$time_subset <- renderUI({
+	### If time resolution is monthly
+	if(input$time_resolution=='monthly'){
+		selectizeInput('time_subset', 'Date Subset', 
+ 			choices = c(`Full Timeseries` = '0', `January` = '1', `February` = '2', `March` = '3', `April` = '4', `May` = '5', `June` = '6', `July` = '7', `August` = '8', `September` = '9', `October` = '10', `November` = '11', `December` = '12' ),
+ 			multiple = FALSE) 
+   	}	
+})
 
 ###########################################################################
 ## Extract the subset information

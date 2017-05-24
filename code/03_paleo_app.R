@@ -61,6 +61,7 @@ require(shinythemes)
 require(lubridate)
 require(xts)
 require(shiny)
+require(leaflet)
 
 ###########################################################################
 ## Set Initial Values

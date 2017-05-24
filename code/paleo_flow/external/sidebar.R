@@ -28,17 +28,12 @@ column(3,
 			choices = c(`Monthly` = 'monthly', `Annual` = 'annual'),
 			multiple = FALSE)
 		)),
+	
 		fluidRow(column(12,
 			### Input for site location
- 			selectizeInput('site_name', 'Site Location', 
- 			choices =  create_site_list(site_all, res = "monthly"),
-    		selected = NULL,
-    		multiple = FALSE,
-    		options = list(
-          		placeholder = 'Select site location'
-        		)
-        	)     
+ 			uiOutput("ui")
 		)),
+				
 		fluidRow(column(12,
 		### Input for units
 		selectizeInput('flow_units', 'Flow Units', 
@@ -49,9 +44,8 @@ column(3,
 		fluidRow(column(12,
 		conditionalPanel(
 		condition = "input.time_resolution == 'monthly'",
- 		selectizeInput('time_subset', 'Date Subset', 
- 			choices = c(`Full Timeseries` = '0', `January` = '1', `February` = '2', `March` = '3', `April` = '4', `May` = '5', `June` = '6', `July` = '7', `August` = '8', `September` = '9', `October` = '10', `November` = '11', `December` = '12' ),
- 			multiple = FALSE))
+			uiOutput("time_subset")
+		)
 		)),
 	### Download Button
    		downloadButton('downloadData', 'Download Data', class="btn-primary")
