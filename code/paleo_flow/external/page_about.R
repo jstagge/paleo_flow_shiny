@@ -14,9 +14,9 @@ column(9,
        		p("When using the Reconstructed Streamflow Explorer for research or reference, please cite as follows:")
        	),
        	fluidRow(
-       		strong("Stagge, J.H. (2017) PaleoFlow Reconstructed Streamflow Explorer Version 2.0.0. www.paleoflow.org  doi:10.5281/zenodo.570935"),
+       		strong("Stagge, J.H. (2017) PaleoFlow Reconstructed Streamflow Explorer Version 2.1.0. www.paleoflow.org  doi:10.5281/zenodo.583166"),
        		
-			tags$div(tags$a(href="https://github.com/jstagge/paleo_flow_shiny",  img(src="https://zenodo.org/badge/DOI/10.5281/zenodo.570935.svg", alt="DOI"))),
+			tags$div(tags$a(href="https://github.com/jstagge/paleo_flow_shiny",  img(src="https://zenodo.org/badge/DOI/10.5281/zenodo.583166.svg", alt="DOI"))),
 		 	br()
 		 ),
 		 fluidRow(
