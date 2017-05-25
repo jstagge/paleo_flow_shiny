@@ -33,6 +33,10 @@ output$time_subset <- renderUI({
 		selectizeInput('time_subset', 'Date Subset', 
  			choices = c(`Full Timeseries` = '0', `January` = '1', `February` = '2', `March` = '3', `April` = '4', `May` = '5', `June` = '6', `July` = '7', `August` = '8', `September` = '9', `October` = '10', `November` = '11', `December` = '12' ),
  			multiple = FALSE) 
+   	} else {
+   		selectizeInput('time_subset', 'Date Subset', 
+ 			choices = c(`Full Timeseries` = '0'),
+ 			multiple = FALSE)
    	}	
 })
 
@@ -42,13 +46,13 @@ output$time_subset <- renderUI({
 subset_input <- reactive({ as.numeric(input$time_subset) })
 
 ### Extract time resolution
-time_resolution <- reactive({input$time_resolution})
+#time_res <- reactive({input$time_resolution})
 
 ### Set name of column for reconstruction
 rec_col_name <- reactive({
-	if (time_resolution() == "monthly") {
+	if (input$time_resolution == "monthly") {
 		"Monthly_Recon"
-	} else if (time_resolution() == "annual") {
+	} else if (input$time_resolution == "annual") {
 		"Annual_Recon"
 	}
 })
@@ -120,7 +124,7 @@ paleo_ts_temp <- reactive({
 		ts(as.matrix(paleo_ts_temp), start=c(1700,1), frequency=12)
 	
 	### If data is annual
-	} else if (time_resolution() == "annual"){	
+	} else if (input$time_resolution == "annual"){	
 		### Read time series from list 
 		paleo_ts_temp <- data.frame(Month=1, Year=annual_flow_obs$year, Observed=annual_flow_obs[, col_name()], Annual_Recon=annual_flow_rec[, col_name()])	
 		### Find first non NA and cut to length
@@ -131,7 +135,7 @@ paleo_ts_temp <- reactive({
 		xts(paleo_ts_temp, date_vec)
 	
 	### If data is monthly	
-	} else if (time_resolution() == "monthly"){
+	} else if (input$time_resolution == "monthly"){
 		### Read time series from list 
 		paleo_ts_temp <- data.frame(Month=monthly_flow_obs$month, Year=monthly_flow_obs$year, Observed=monthly_flow_obs[, col_name()], Annual_Recon=monthly_flow_rec_annual[, col_name()], Monthly_Recon=monthly_flow_rec_monthly[, col_name()] )	
 		### Find first non NA and cut to length
@@ -260,9 +264,9 @@ gof_df_temp <- reactive({
  	  	gof_df <- gof_df[refer_test,]
  	  	
  	  	### Separate paleo_date if Annual or Monthly
-		if (time_resolution() == "monthly") {
+		if (input$time_resolution == "monthly") {
 			paleo_dates <- paste0("", gof_df$Month, " / ", gof_df$Year, "")
-		} else if (time_resolution() == "annual"){
+		} else if (input$time_resolution == "annual"){
 			paleo_dates <- paste0(gof_df$Year, "")		
 		}
 		
@@ -577,7 +581,7 @@ period_compar_dist_df <- reactive({
 
   
   observe({
-  if (time_resolution() == "monthly") {
+  if (input$time_resolution == "monthly") {
   
  output$tsPlot <-  renderDygraph({
     dygraph(paleo_ts_plot(), main = site_name()) %>%
@@ -733,7 +737,7 @@ output$period_threshold_table <-renderTable({
 selected_icon <- makeAwesomeIcon(icon = "star", library = "fa", markerColor = "lightgreen")
 
 map.old <- reactive({ 
-	if (time_resolution() == "monthly") {
+	if (input$time_resolution == "monthly") {
 		map <- leaflet(data=data.frame(lat=site_monthly$lat, long=site_monthly$lon, name=site_monthly$site_name ))
 	} else {
 		map <- leaflet(data=data.frame(lat=site_annual$lat, long=site_annual$lon, name=site_annual$site_name ))

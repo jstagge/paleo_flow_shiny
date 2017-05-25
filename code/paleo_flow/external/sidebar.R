@@ -25,7 +25,8 @@ column(3,
 		fluidRow(column(12,
 			### Input for time resolution
 			selectizeInput('time_resolution', 'Time Resolution', 
-			choices = c(`Monthly` = 'monthly', `Annual` = 'annual'),
+			choices = c(`Annual` = 'annual', `Monthly` = 'monthly'),
+			selected='annual',
 			multiple = FALSE)
 		)),
 	
