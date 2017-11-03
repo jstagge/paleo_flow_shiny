@@ -326,10 +326,12 @@ gof_table_df <- reactive({
  		gof_table_df <- signif_df(gof_table_df,3)
  		### Create Data frame
  		gof_table_df <- data.frame(Period=period_name, gof_table_df)
+ 		### Create R squared
+ 		gof_table_df$r_square <- (gof_table_df$R)^2
  		### Cut the extraneous columns out
- 		gof_table_df <- gof_table_df[ , !(names(gof_table_df) %in% c("MAE", "R.spear"))]
+ 		gof_table_df <- gof_table_df[ , !(names(gof_table_df) %in% c("MAE", "R", "R.spear"))]
  		### Rename Columns
- 		names(gof_table_df) <- c("Period", "Mean Error", "Root Mean Sq Error (RMSE)", "Nash-Sutcliffe Eff", "Pearson Corr (R)")
+ 		names(gof_table_df) <- c("Period", "Mean Error", "Root Mean Sq Error (RMSE)", "Nash-Sutcliffe Eff", "Coef of Determ (R^2)")
  
  	gof_table_df
 	})	
