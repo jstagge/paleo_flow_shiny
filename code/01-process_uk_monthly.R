@@ -164,3 +164,29 @@ flow_annual_recon_merge <- flow_annual_recon_merge[with(flow_annual_recon_merge,
 
 
 
+###########################################################################
+## Write results
+###########################################################################
+
+write.csv(flow_obs_merge, file.path(write_output_path,"flow_obs.csv"), row.names=FALSE)
+write.csv(flow_month_recon_merge, file.path(write_output_path,"flow_rec_month.csv"), row.names=FALSE)
+write.csv(flow_annual_recon_merge, file.path(write_output_path,"flow_rec_annual.csv"), row.names=FALSE)
+
+
+
+###########################################################################
+## Display site data
+###########################################################################
+
+data(stationSummary)
+
+### Cut to only our stations
+station_data <- merge(site_id_df, stationSummary, by.x="nrfa", by.y="id", all.x=TRUE)
+### Re-sort alphabetically
+station_data <- station_data[with(station_data, order(id)), ]
+### Drop long text columns
+station_data <- subset(station_data, select=-c(stationDescription, catchmentDescription, categories))
+
+write.csv( station_data, "uk_station_data.csv")
+
+

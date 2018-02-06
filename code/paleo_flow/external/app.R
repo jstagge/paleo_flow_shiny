@@ -178,11 +178,18 @@ unit_conversion <- reactive({
 			unit_conv <- 35.31467
 			### Convert to ac-ft per second
 			unit_conv <- unit_conv * (1/43560)
-			### Convert to ac-ft per month
-			unit_conv <- unit_conv * 60*60*24*days_in_month(year_month())
+					
+			### If Monthly, convert to ac-ft per month
+			if (input$time_resolution=='monthly') {
+				unit_conv <- unit_conv * 60*60*24*days_in_month(year_month())
+			### If annual, convert to ac-ft per year
+			} else if (input$time_resolution=='annual') {
+				unit_conv <- unit_conv * 60*60*24*(365+as.numeric(leap_year(year_month())))
+			}	
 		}
 	unit_conv
 })
+
 
 ###########################################################################
 ## Create full (no subset) time series with correct units
