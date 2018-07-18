@@ -774,5 +774,24 @@ output$mymap <- renderLeaflet({ map.old() })
 #    })
 
  
-  
-  
+###########################################################################
+## Submit button
+###########################################################################   
+
+ouput$submit_email <- observeEvent(input$submitdata, {
+    isolate({
+      send.mail(from = "jhstagge@gmail.com",
+          to = "james.stagge@usu.edu",
+          subject = paste("New data submitted to WoodDAM from", input$name, sep = " "),
+          body = paste(input$name, "from institution:", input$inst, "with email:", input$email, 
+            "has submitted data to the wood jam dynamics database.",
+            "This data is attached to this email",
+            input$name, "sent the following note accompanying this data:", input$note, collapse = ","),
+          smtp = list(host.name = "smtp.gmail.com", port = 465, user.name = "jhstagge", passwd = "co'!Y1#<'%@|(]}", ssl = TRUE),
+          authenticate = TRUE,
+          send = TRUE,
+          attach.files = input$userdata$datapath,
+          file.names = paste(timeDate(Sys.time(), FinCenter = "America/Denver"), input$name, "WooDDAM_user_data", sep = "_", collapse = ","), # optional parameter
+          debug = T)
+    })
+  })

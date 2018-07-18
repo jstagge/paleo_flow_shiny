@@ -32,9 +32,7 @@
 # |
 # *------------------------------------------------------------------
  
-### Clear any existing data or functions.
-rm(list=ls())
-
+ 
 ###########################################################################
 ## Set the Paths
 ###########################################################################
@@ -62,6 +60,9 @@ require(lubridate)
 require(xts)
 require(shiny)
 require(leaflet)
+library(rJava)
+library(mailR)
+library(timeDate)
 
 ###########################################################################
 ## Set Initial Values
