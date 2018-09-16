@@ -778,8 +778,9 @@ output$mymap <- renderLeaflet({ map.old() })
 ## Submit button
 ###########################################################################   
 
-output$submit_email <- eventReactive(input$submitdata, {
-    output$submittxt <- renderText("some text")
-  })
+  
+#output$submit_email <- eventReactive(input$submitdata, {
+#    output$submittxt <- renderText("some text")
+#  })
   
   
