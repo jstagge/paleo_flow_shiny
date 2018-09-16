@@ -1,5 +1,9 @@
 ### Sidebar column 
+	conditionalPanel(
+	condition = "input.nav_value != 'submit' & input.nav_value != 'about' ",
 column(3,
+
+		
 		conditionalPanel(
 	condition = "input.nav_value == 'extremes' | input.nav_value == 'periods'",
 		wellPanel(
@@ -54,6 +58,7 @@ column(3,
 	
 	),
 	fluidRow(column(12,
-			p("For monthly reconstructions, it is possible to focus on particular months. Selections on the left will populate all other tabs.")
+		p("For monthly reconstructions, it is possible to focus on particular months. Selections on the left will populate all other tabs.")
 	))
+   )
 )

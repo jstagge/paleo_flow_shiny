@@ -35,6 +35,7 @@ shinyUI(navbarPageWithText(
   	tabPanel("Period Comparison", value="periods"),
   	tabPanel("Goodness of Fit", value="gof"),
   	tabPanel("Submit", value="submit"),
+  	tabPanel("Background", value="background"),
 	tabPanel("About", value="about"),
   	text = HTML('<div class="hidden-md hidden-sm hidden-xs"><div class="pull-right" style="padding-right:40px; padding-top:20px"><img src="./img/usu_horizontal_white.png" width="100%" ></div></div>'),
 	windowTitle="Paleoflow",

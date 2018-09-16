@@ -45,6 +45,8 @@
 require(assertthat)
 require(reshape2)
 
+### Needed for my laptop
+require(later)
 
 #devtools::install_github("jcheng5/googleCharts")
 
@@ -77,13 +79,13 @@ library(timeDate)
 
 runApp("paleo_flow")
 
-runApp("my_example5")
+##runApp("my_example5")
 
 
 ###########################################################################
 ##  Publish to Shiny website
 ###########################################################################
-rsconnect::deployApp("paleo_flow")
+##rsconnect::deployApp("paleo_flow")
 
 
 

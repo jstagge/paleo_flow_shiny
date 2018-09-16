@@ -98,5 +98,8 @@ monthly_flow_obs <- read.csv(file.path(data_path, "monthly/flow_obs.csv"))
 monthly_flow_rec_annual <- read.csv(file.path(data_path, "monthly/flow_rec_annual.csv"))
 monthly_flow_rec_monthly <- read.csv(file.path(data_path, "monthly/flow_rec_month.csv"))
 
-
+###########################################################################
+## Read in email login	
+###########################################################################
+login_info <- read.csv("./private/login.csv", header=FALSE, colClasses = c("character"))
 
