@@ -766,6 +766,70 @@ output$mymap <- renderLeaflet({ map.old() })
 
 
 ###########################################################################
+## Submitting reconstructions
+###########################################################################   
+# Enable the Submit button when all mandatory fields are filled out
+    observe({
+      mandatoryFilled <-
+        vapply(fieldsMandatory,
+               function(x) {
+                 !is.null(input[[x]]) && input[[x]] != ""
+               },
+               logical(1))
+      mandatoryFilled <- all(mandatoryFilled)
+      
+      shinyjs::toggleState(id = "submit", condition = mandatoryFilled)
+    })
+    
+    # Gather all the form inputs (and add timestamp)
+    formData <- reactive({
+      data <- sapply(fieldsAll, function(x) input[[x]])
+      data <- c(data, timestamp = epochTime())
+      data <- t(data)
+      data
+    })    
+    
+    # When the Submit button is clicked, submit the response
+    observeEvent(input$submit, {
+      
+      # User-experience stuff
+      shinyjs::disable("submit")
+      shinyjs::show("submit_msg")
+      shinyjs::hide("error")
+      
+      # Save the data (show an error message in case of error)
+      tryCatch({
+        saveName <- saveData(formData(), file=input$upload$datapath, login=login_info)
+        
+        #file.copy(input$upload$datapath, paste0("uploaded/",saveName))
+       
+        shinyjs::reset("form")
+        shinyjs::hide("form")
+        shinyjs::show("thankyou_msg")
+      },
+      error = function(err) {
+        shinyjs::html("error_msg", err$message)
+        shinyjs::show(id = "error", anim = TRUE, animType = "fade")
+      },
+      finally = {
+        shinyjs::enable("submit")
+        shinyjs::hide("submit_msg")
+      })
+    })
+    
+    # submit another response
+    observeEvent(input$submit_another, {
+      shinyjs::show("form")
+      shinyjs::hide("thankyou_msg")
+    })
+    
+  
+#output$submit_email <- eventReactive(input$submitdata, {
+#    output$submittxt <- renderText("some text")
+#  })
+  
+  
+###########################################################################
 ## For troubleshooting
 ###########################################################################   
 
@@ -774,13 +838,3 @@ output$mymap <- renderLeaflet({ map.old() })
 #    })
 
  
-###########################################################################
-## Submit button
-###########################################################################   
-
-  
-#output$submit_email <- eventReactive(input$submitdata, {
-#    output$submittxt <- renderText("some text")
-#  })
-  
-  

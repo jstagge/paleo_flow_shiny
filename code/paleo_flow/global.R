@@ -27,6 +27,10 @@ library(shinythemes)
 library(png)
 require(shiny)
 require(leaflet)
+require(mailR)
+require(shinyjs)
+require(shinyBS)
+require(digest)
 
 ### Load project specific functions
 #file.sources = list.files(function_path, pattern="*.R", recursive=TRUE)
@@ -37,6 +41,7 @@ source("./functions/gof_ts.R")
 source("./functions/read_in_paleo.R")
 source("./functions/round_df.R")
 source("./functions/dygraph-extra-shiny.R")
+source("./functions/submit_funcs.R")
 
 source("external/navbar_func.R")
 
@@ -97,6 +102,27 @@ annual_flow_rec <- read.csv(file.path(data_path, "annual/flow_rec.csv"))
 monthly_flow_obs <- read.csv(file.path(data_path, "monthly/flow_obs.csv"))
 monthly_flow_rec_annual <- read.csv(file.path(data_path, "monthly/flow_rec_annual.csv"))
 monthly_flow_rec_monthly <- read.csv(file.path(data_path, "monthly/flow_rec_month.csv"))
+
+
+###########################################################################
+## Needed for submissions
+###########################################################################
+# which fields get saved 
+fieldsAll <- c("name", "user_email", "user_notes")
+
+# which fields are mandatory
+fieldsMandatory <- c("recon_name", "user_email", "upload")
+
+# directory where responses get stored
+responsesDir <- file.path("submissions")
+
+# CSS to use in the app
+appCSS <-
+  ".mandatory_star { color: red; }
+   .shiny-input-container { margin-top: 25px; }
+   #submit_msg { margin-left: 15px; }
+   error { color: red; }
+  "
 
 ###########################################################################
 ## Read in email login	

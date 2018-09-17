@@ -65,6 +65,7 @@ require(leaflet)
 library(rJava)
 library(mailR)
 library(timeDate)
+require(shinyjs)
 
 ###########################################################################
 ## Set Initial Values
