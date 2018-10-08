@@ -3,7 +3,7 @@
 ###########################################################################           
 
 column(12,
-	column(12,offset=1, fluidRow(h2("About"))),
+	column(12,offset=1, fluidRow(h2("Background"))),
 	
 	column(5, offset=1,
 		fluidRow(
