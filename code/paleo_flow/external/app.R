@@ -3,28 +3,39 @@
 ## Dynamic Input for Date Subset and Sites
 ###########################################################################
 ### Create selector for site id
-output$ui <- renderUI({
-	### If no time resolution is selected
-    if (is.null(input$time_resolution))
-      return()
-	### If time resolution is monthly
-	if(input$time_resolution=='monthly'){
-		selectizeInput("site_name", 'Site Location',
-        	choices = create_site_list(site_all, res="monthly"),
-   			selected = NULL,
-   			multiple = FALSE,
-   			options = list(placeholder = 'Select site location')
-   		)	
-	### If time resolution is annual
-	} else {
-		selectizeInput("site_name", 'Site Location',
- 	       choices = create_site_list(site_all, res="annual"),
-    		selected = NULL,
-   			multiple = FALSE,
-   			options = list(placeholder = 'Select site location')
-   		)
+observe({
+	### For client to pass data through the URL and have the site pre-selected.
+	### Example http://127.0.0.1:4516/?site_list_num=4 will have the location "White River" pre-selected.
+	query <- parseQueryString(session$clientData$url_search)
+	if (!is.null(query[['site_list_num']])) {
+		updateSelectInput(session, "site_name", label = NULL, choices = NULL, selected = query[['site_list_num']])
 	}
+	output$ui <- renderUI({
+		### If no time resolution is selected
+	    if (is.null(input$time_resolution))
+	      return()
+		### If time resolution is monthly
+		if(input$time_resolution=='monthly'){
+			selectizeInput("site_name", 'Site Location',
+	        	choices = create_site_list(site_all, res="monthly"),
+	   			selected = NULL,
+	   			multiple = FALSE,
+	   			options = list(placeholder = 'Select site location'),
+	   			verbatimTextOutput("value")
+	   		)	
+		### If time resolution is annual
+		} else {
+			selectizeInput("site_name", 'Site Location',
+	 	       choices = create_site_list(site_all, res="annual"),
+	    		selected = NULL,
+	   			multiple = FALSE,
+	   			options = list(placeholder = 'Select site location'),
+	   			verbatimTextOutput("value")
+	   		)
+		}
+	})	        
 })
+
 
 ### Create selector for time subset
 output$time_subset <- renderUI({
@@ -58,7 +69,6 @@ rec_col_name <- reactive({
 })
 
 
-
 ###########################################################################
 ## Determine site information
 ###########################################################################
@@ -70,8 +80,6 @@ list_id <- reactive({
 		input$site_name
 	}
 })
-
-
 
 ### Extract Site Info
 site_info <- reactive({
@@ -86,6 +94,10 @@ site_info <- reactive({
 	}
 })
 
+observeEvent(input$site_name, {
+    print(paste0("You have chosen: ", input$site_name))
+    # print(paste0("You have chosen: ", reactive({ site_info()$site_name })))
+  })
 
 ### Extract Site Name
 site_name <- reactive({ site_info()$site_name })
