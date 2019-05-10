@@ -59,6 +59,7 @@ require(reshape2)
 require(lubridate)
 require(tidyverse)
 require(ggplot2) 
+require(readxl)
 
 ###########################################################################
 ## Combine monthly and annual time series
@@ -78,14 +79,14 @@ annual_ts <- annual_ts %>%
 flow_db <- rbind(monthly_ts, annual_ts)
 
 saveRDS(flow_db, file.path(shiny_data_path,"flow_db.rds"))
+saveRDS(flow_db, file.path(output_path_base,"flow_db.rds"))
 
 
 ###########################################################################
 ## Combine site data
 ###########################################################################
-
-site_monthly <- read.table(file.path(shiny_data_path, "sites_monthly.txt"), sep="\t", header=TRUE,colClasses=c(rep("character", 10), rep("numeric",2)))
-site_annual <- read.table(file.path(shiny_data_path, "sites_annual.txt"), sep="\t", header=TRUE,colClasses=c(rep("character", 10), rep("numeric",2)))
+site_annual <-read_excel(file.path(shiny_data_path, "sites_annual.xlsx"))
+site_monthly <-read_excel(file.path(shiny_data_path, "sites_monthly.xlsx"))
 
 ### Modify the annual site table, resort and add an annual column
 site_annual <- site_annual %>%
@@ -107,6 +108,7 @@ site_monthly <- site_monthly %>%
 site_all <- rbind(site_monthly, site_annual)
 
 saveRDS(site_all, file.path(shiny_data_path,"site_all.rds"))
+saveRDS(site_all, file.path(output_path_base,"site_all.rds"))
 
 
 

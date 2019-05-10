@@ -100,9 +100,10 @@ time_sec <- 365.25*24*60*60
 ###########################################################################
 
 ### Set site data
-site_id_list <- c("10109001", "10011500", "10128500")
-site_name_list <- c("Logan Utah", "Bear River near Utah-Wyo", "Weber River")
-recons_file_name_list <- c("logan2013flow.txt", "bear2015flow.txt", "weber2014flow.txt")
+site_id_list <- c("10109001", "10109001", "10011500", "10128500")
+site_name_list <- c("Logan Utah Local", "Logan Utah Regional","Bear River near Utah-Wyo", "Weber River")
+recons_file_name_list <- c("logan2013flow.txt", "logan2013flow.txt","bear2015flow.txt", "weber2014flow.txt")
+col_name_list <- c("logan2013_local", "logan2013_regional", "bear2015", "weber2014")
 
 param_cd <- "00060"
 wy_first_month <- 10 ### This is the default USGS water year, starting on Oct 1, it also follows Justin DeRose's reconstruction of MAF
@@ -116,8 +117,7 @@ for (n in seq(1,length(site_id_list))) {
 site_id <- site_id_list[n]
 site_name <- site_name_list[n]
 recons_file_name <- recons_file_name_list[n]
-
-col_name <- tolower(unlist(strsplit(recons_file_name, "flow.txt")))
+col_name <- col_name_list[n]
 
 recons_file_name <- paste0("Derose/",recons_file_name)
 
@@ -177,7 +177,11 @@ flow_recon_temp <- read_table_wheaders(file.path(annual_folder,recons_file_name)
 flow_recon <- tibble(col_name = col_name, year = flow_recon_temp$age_AD)
 
 if (site_id == "10109001"){
-flow_recon$recon_m3s <- flow_recon_temp$flow.rec.region.m3s
+	if(col_name == "logan2013_local"){
+		flow_recon$recon_m3s <- flow_recon_temp$flow.rec.local.m3s
+	} else {
+		flow_recon$recon_m3s <- flow_recon_temp$flow.rec.region.m3s
+	}
 } else if (site_id == "10128500") {
 flow_recon$recon_m3s <- flow_recon_temp$flow.rec.local.m3s
 } else {
@@ -217,14 +221,18 @@ saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
 annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
 
 ### Read in Data
-flow_recon <- read_table_wheaders(file.path(annual_folder,"riogrande2013flow.txt"), sep="\t", na.string="-9999")
+annual_temp <- read_table2(file.path(annual_folder,"riogrande2013flow.txt"), skip=105, na="-9999" )
 
-### Create data
-annual_temp <- tibble(col_name = "riogrande2013", year=flow_recon$age_AD, obs_m3s=flow_recon$flow.obs.m3s, recon_m3s = flow_recon$flow.rec.m3s)
+annual_temp <- annual_temp %>%
+	mutate(col_name = "riogrande2013") %>%
+	rename("recon_m3s" = 'flow-rec-m3s') %>%
+	rename("obs_m3s" = "flow-obs-m3s") %>%
+	rename("year" = 'age_AD') %>%
+	select(col_name, year, obs_m3s, recon_m3s)
 
 ### Merge data
 annual_ts <- rbind(annual_ts, annual_temp)
-rm(flow_recon)
+rm(annual_temp)
 
 ### Save to RDS file
 saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
@@ -310,11 +318,11 @@ saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
 ###########################################################################
 annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
 
-
 ### Read in Data
 annual_temp <- read_table2(file.path(annual_folder,"Australia/burdekin_flow_edit.txt"), skip=50)
 
-### Burdekin at Clare 120006
+### Process reconstruction
+### Burdekin at Clare 120006B
 burdekin_area <-129875 #### drainage area in km2
 burdekin_area <- burdekin_area * 1000
 #### Lat lon  -19.6 147.4 
@@ -323,18 +331,49 @@ burdekin_area <- burdekin_area * 1000
 ### Create data
 annual_temp <- annual_temp %>%
 	mutate(col_name = "burdekin") %>%
-	mutate(obs_m3s = NA) %>%
-	rename("recon_m3s" = 'Burdekin') %>%
-	mutate(recon_m3s = ((recon_m3s/1000) * burdekin_area)/time_sec) %>%
+	rename("recon_mm_year" = 'Burdekin') %>%
+	mutate(recon_m_year = recon_mm_year / 1000) %>%
+	mutate(recon_m3_year = recon_m_year * burdekin_area) %>%
+	mutate(recon_m3s = recon_m3_year /time_sec) %>%
 	rename("year" = 'Year') %>%
-	select(col_name, year, obs_m3s, recon_m3s)
+	select(col_name, year, recon_m3s)
+
+### Process Burdekin Observed
+
+burdekin_obs <- read_csv(file.path(annual_folder,"Australia/csv.w00066.20190510102434.120006B.csv"), skip=9)
+
+burdekin_obs <- burdekin_obs %>%
+	mutate(Timestamp_tz = with_tz(Timestamp, tzone="Australia/Brisbane")) %>%
+	mutate(month = month(Timestamp_tz), year = year(Timestamp_tz))
+
+### Calculate water year
+burdekin_obs$water_year <- usgs_wateryear(year=burdekin_obs$year, month=burdekin_obs$month, first_month=10)
+
+burdekin_obs_mean <- burdekin_obs %>%
+	group_by(water_year) %>%
+	summarise(obs_m3s = mean(Value, na.rm=TRUE), n_na=sum(is.na(obs_m3s))) %>%
+	filter(n_na < 20) %>%
+	rename("year" = "water_year")
+
+### Combine obs with recon
+annual_temp <- annual_temp %>%
+	full_join(burdekin_obs_mean, by= "year") %>%
+	select(col_name, year, obs_m3s, recon_m3s) %>%
+	arrange(year)
+
+### It appears there is a 1,000 fold error in the reconstuction
+plot(annual_temp$year, annual_temp$recon_m3s, type="l", ylim=c(0,2500)) 
+lines(annual_temp$year, annual_temp$recon_m3s*1000, col="blue") 
+lines(annual_temp$year, annual_temp$obs_m3s, col="red")
+
+### Make this adjustment
+annual_temp <- annual_temp %>%
+	mutate(recon_m3s = recon_m3s * 1000)
 
 ### Merge data
 annual_ts <- rbind(annual_ts, annual_temp)
 
 rm(annual_temp)
-
-
 
 ### Save to RDS file
 saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
@@ -395,7 +434,77 @@ saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
 ###########################################################################
 ## Process New Zealand
 ###########################################################################
-### Unclear units, choose not to include
+annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
+
+### Read in reconstruction
+annual_temp <- read_table2(file.path(annual_folder,"New_Zealand/hurunui_flow.txt"), skip=1, guess_max=1000)
+annual_temp <- annual_temp %>%
+	rename("year" = "Year")
+
+year_vec <- annual_temp %>%
+	select(year) 
+year_vec 
+
+flow_alone <- annual_temp %>%
+	select(-year) %>%
+	as.data.frame()
+
+flow_alone <- as.vector(t(flow_alone))
+flow_alone <- as.numeric(na.omit(flow_alone))
+
+year_vec <- seq(min(year_vec,na.rm=TRUE), length.out=length(flow_alone))
+
+### Create data
+annual_temp <- tibble(col_name = "hurunui", year=year_vec, recon_m3s = flow_alone)
+
+### File lists flow as m2/s * 10, assume this is typo meant to be m3/s * 10 becasue it lines up well
+annual_temp <- annual_temp %>%
+	mutate(recon_m3s = recon_m3s/10)
+
+
+### Process Hurunui Observed
+### Hurunui at Mandamus gauge 65104
+### Nov - Jan flow
+hurunui_obs <- read_csv(file.path(annual_folder,"New_Zealand/65104_obs.csv"), skip=1)
+
+hurunui_obs <- hurunui_obs %>%
+	rename("Timestamp" = `Timestamp (UTC+12:00)`) %>%
+	rename("obs_m3s" = `Value (Cubic Metres Per Second)`) %>%
+	mutate(Timestamp_tz = with_tz(Timestamp, tzone="Pacific/Auckland")) %>%
+	mutate(date = date(Timestamp_tz))
+
+### Calculate daily mean 
+hurunui_obs <- hurunui_obs %>%
+	group_by(date) %>%
+	summarise(obs_m3s = mean(obs_m3s, na.rm=TRUE))
+
+ggplot(hurunui_obs, aes(x = date, y= obs_m3s)) + geom_line() + theme_classic()
+
+### Calculate mean nov - jan flow
+hurunui_obs_annual <- hurunui_obs %>%
+	mutate(month = month(date), year = year(date)) %>%
+	filter(month == 11 | month == 12 | month == 1) %>%
+	group_by(year) %>%
+	summarise(obs_m3s = mean(obs_m3s, na.rm=TRUE), n_na=sum(is.na(obs_m3s))) %>%
+	filter(n_na < 20)
+
+### Combine obs with recon
+annual_temp <- annual_temp %>%
+	full_join(hurunui_obs_annual, by= "year") %>%
+	select(col_name, year, obs_m3s, recon_m3s) %>%
+	arrange(year)
+
+### Doublecheck plot
+plot(annual_temp$year, annual_temp$recon_m3s, type="l") #, ylim=c(0,2500)) 
+lines(annual_temp$year, annual_temp$obs_m3s, col="red")
+
+### Merge data
+annual_ts <- rbind(annual_ts, annual_temp)
+
+rm(annual_temp)
+
+### Save to RDS file
+saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
 
 
 
@@ -534,13 +643,15 @@ if (i == 1) {
 obs_stats <- obs_stats %>%
 	select(site_no, year_nu, mean_va) %>%
 	rename("year" = "year_nu") %>%
-	rename("col_name" = "site_no") %>%
+	mutate(col_name = paste0("usgs_", site_no)) %>%
 	mutate(obs_m3s = mean_va * ft3_to_m3 ) %>%
 	select(-mean_va) %>%
 	as_tibble()
 
 annual_temp <- annual_temp %>%
-	left_join(obs_stats, by=c("col_name", "year"))
+	mutate(col_name = paste0("usgs_", col_name)) %>%
+	full_join(obs_stats, by=c("col_name", "year")) %>%
+	arrange(col_name, year)
 
 ### Merge data
 annual_ts <- rbind(annual_ts, annual_temp)
@@ -552,29 +663,6 @@ saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
 
 #### LOOKS LIKE THERE ARE SOME STRANGE PEAKS IN THE MISSOURI RECONSTRUCTION DATA
 #### DOUBLE CHECK THIS
-
-
-###########################################################################
-## Process Rio Grande
-###########################################################################
-annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
-
-### Read in Data
-annual_temp <- read_table2(file.path(annual_folder,"riogrande2013flow.txt"), skip=105, na="-9999" )
-
-annual_temp <- annual_temp %>%
-	mutate(col_name = "riogrande2013") %>%
-	rename("recon_m3s" = 'flow-rec-m3s') %>%
-	rename("obs_m3s" = "flow-obs-m3s") %>%
-	rename("year" = 'age_AD') %>%
-	select(col_name, year, obs_m3s, recon_m3s)
-
-### Merge data
-annual_ts <- rbind(annual_ts, annual_temp)
-rm(annual_temp)
-
-### Save to RDS file
-saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
 
 
 ###########################################################################
