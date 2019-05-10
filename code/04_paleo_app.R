@@ -46,7 +46,7 @@ require(assertthat)
 require(reshape2)
 
 ### Needed for my laptop
-require(later)
+#require(later)
 
 #devtools::install_github("jcheng5/googleCharts")
 
@@ -60,12 +60,26 @@ library(datasets)
 require(shinythemes)
 require(lubridate)
 require(xts)
+require(dplyr)
 require(shiny)
 require(leaflet)
 library(rJava)
 library(mailR)
 library(timeDate)
 require(shinyjs)
+require(shinyBS)
+
+### For ubuntu
+#sudo apt-get install -y default-jre
+#sudo apt-get install -y default-jdk
+#sudo R CMD javareconf
+#install.packages("rJava")
+
+### Had to install github version of googleCharts
+
+### For arch linux
+#https://biostatsr.blogspot.com/2017/09/install-rjava-on-archlinux.html
+
 
 ###########################################################################
 ## Set Initial Values

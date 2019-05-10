@@ -1,0 +1,38 @@
+
+paleo_ts_temp <- reactive({
+	### If no data is selected
+	if (list_id()=="None"){
+		### Generate a blank graph
+		paleo_ts_temp <- data.frame(Observed=rep(NA,300), Annual_Recon=rep(NA,300), Monthly_Recon=rep(NA,300))
+		ts(as.matrix(paleo_ts_temp), start=c(1700,1), frequency=12)
+	
+	} else {
+		paleo_ts_temp <- flow_db %>%
+			filter(col_name == input$site_name & resolution == input$time_subset) %>%
+			mutate_at(c("annual_m3s", "obs_m3s", "recon_m3s"),  funs(. * unit_conversion()))  ### Add in the unit scaling
+
+	paleo_ts_temp
+	}
+})
+
+
+
+
+
+		if (input$time_resolution == "annual"){	
+
+			paleo_ts_temp <- paleo_ts_temp %>%
+		 		mutate(date = as.Date(paste0(year, "-01-01"))) %>%
+				complete(date = seq.Date(min(date, na.rm=TRUE), max(date, na.rm=TRUE), by="year")) %>%
+				arrange(date) %>%
+				as.data.frame()
+
+		} else if (input$time_resolution == "monthly"){
+
+			paleo_ts_temp <- paleo_ts_temp %>%
+		 		mutate(date = as.Date(paste0(year, "-",month,"-01"))) %>%
+				complete(date = seq.Date(min(date, na.rm=TRUE), max(date, na.rm=TRUE), by="month")) %>%
+				arrange(date) %>%
+				as.data.frame()
+
+		}

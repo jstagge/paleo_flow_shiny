@@ -30,17 +30,11 @@ for (n in seq(1, length(site_group_list))) {
 	group_test <- file_name_subset$site_group == site_group_list[n]
 	
 	### Create an object with site name as header and site id as object
-	site_list_temp <- file_name_subset$list_id[group_test]
+	site_list_temp <- file_name_subset$col_name[group_test]
 	names(site_list_temp) <- file_name_subset$site_name[group_test]
 	
 	### Add to the longer list
 	site_list[[(n+1)]] <- site_list_temp
-	#if (n ==1) {
-		
-	#	site_list[[(n+1)]] <- site_list_temp
-	#} else {
-	#	site_list[[(n+1)]] <- site_list_temp
-	#}
 } 
 
 ### Name the groups in the full list
