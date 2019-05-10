@@ -15,6 +15,9 @@
 
 create_site_list <- function(file_name, res="all"){ 
 
+### First remove missing rows
+file_name <- subset(file_name, !is.na(col_name))
+
 ### First, subset to only resolution
 file_name_subset <- subset(file_name, resolution==res)
 

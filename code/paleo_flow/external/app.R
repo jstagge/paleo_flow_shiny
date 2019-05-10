@@ -63,18 +63,23 @@ resolution <- reactive({ as.numeric(input$time_resolution) })
 ###########################################################################
 ### Determine which one of the read in time series from the number
 col_name <- reactive({ 
-	if (input$site_name == "") {
+	if (is.null(input$site_name)) {
 		"None"
 	} else {
-		input$site_name
+		input$col_name
 	}
 })
 
 
+#site_info <- reactive({
+#	site_all %>%
+#			filter(col_name == input$site_name & resolution == input$time_resolution) %>%
+#			as.data.frame()
+#})
 
 ### Extract Site Info
 site_info <- reactive({
-	if (col_name()=="None"){
+	if (is.null(input$site_name)){
 		blank_site <- site_all[1,]
 		blank_site[1,seq(1,length(blank_site))] <- NA
 		blank_site$site_name <- "Please Select Site"
@@ -89,7 +94,7 @@ site_info <- reactive({
 
 ### Extract Site Name
 site_name <- reactive({ site_info()$site_name })
-col_name <- reactive({ site_info()$col_name }) ### I'm not sure this is needed
+#col_name <- reactive({ site_info()$col_name }) ### I'm not sure this is needed
 
 ###########################################################################
 ## Extract citation information
@@ -159,8 +164,12 @@ paleo_ts_temp <- reactive({
 ###########################################################################
 ## Process for time series plotting, remove date columns and convert units
 ###########################################################################
+paleo_ts_temp <- data.frame(Observed=rep(NA,300), Annual_Recon=rep(NA,300), Monthly_Recon=rep(NA,300))
+paleo_ts_plot <- ts(as.matrix(paleo_ts_temp), start=c(1700,1), frequency=12)
+
+
 paleo_ts_plot <- reactive({
-	if (input$site_name == ''){
+	if (is.null(input$site_name)){
 		### Generate a blank graph
 		paleo_ts_temp <- data.frame(Observed=rep(NA,300), Annual_Recon=rep(NA,300), Monthly_Recon=rep(NA,300))
 		paleo_ts_plot <- ts(as.matrix(paleo_ts_temp), start=c(1700,1), frequency=12)
@@ -191,8 +200,12 @@ y_lims <- reactive({
 ## Output to time series plot
 ########################################################################### 
 output$tsPlot <-  renderDygraph({
-    dygraph(paleo_ts_plot())
+    dygraph(paleo_ts_plot(), main = site_info()$site_name) %>% #### Create plot and add site name
+	 	dyRangeSelector() %>% 
+  		dyUnzoom() %>% 
+  		dyCrosshair(direction = "vertical")
 	})
+
 
 
 ###########################################################################
@@ -203,10 +216,10 @@ output$tsPlot <-  renderDygraph({
  #     paste("list_id=",list_id(),"site_info=", site_info())
 #    })
 
-output$text1 <- renderText({ input$flow_units })
+output$text1 <- renderText({ col_name()})
 
-
-output$testing_table <- renderDataTable(paleo_ts_temp())
+output$testing_table <- renderDataTable(site_info())
+#output$testing_table <- renderDataTable(paleo_ts_temp())
   
   
  
