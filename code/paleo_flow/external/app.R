@@ -118,17 +118,31 @@ output$base_link_text <- renderUI({ HTML(paste0('<strong>Source Link </strong> :
 ### This previously didn't happen
 
 paleo_ts_temp <- reactive({
+	### Filter to the correct site and resolution, create date columns	
 	paleo_ts_temp <- flow_db %>%
 			filter(col_name == input$site_name & resolution == input$time_resolution) %>%	### Filter to correct data
 			mutate(month = case_when(resolution == "annual" ~ as.integer(1),
                         TRUE  ~ month)) %>%   ### Convert month to 1 if it is annual data
 			mutate(date = as.Date(paste0(year, "-", month, "-01")))  ### Add a date column for plotting and other calculations
 
+	### Perform unit conversion
 	if(input$flow_units != "m3/s"){
 		paleo_ts_temp <- paleo_ts_temp %>%
 			mutate_at(c("annual_m3s", "obs_m3s", "recon_m3s"),  unit_conv, new_unit=input$flow_units, date=.$date, temp_resolution=.$resolution) ### Add in the unit scaling
 	}
 
+	### Create complete time series and sort by date
+	if (input$time_resolution == "annual"){	
+		paleo_ts_temp <- paleo_ts_temp %>%
+			complete(date = seq.Date(min(date, na.rm=TRUE), max(date, na.rm=TRUE), by="year")) %>%
+			arrange(date)
+	} else if (input$time_resolution == "monthly"){
+		paleo_ts_temp <- paleo_ts_temp %>%
+			complete(date = seq.Date(min(date, na.rm=TRUE), max(date, na.rm=TRUE), by="month")) %>%
+			arrange(date)
+	}
+
+	### Export the results as a dataframe
 	paleo_ts_temp %>%
 		as.data.frame()
 })
