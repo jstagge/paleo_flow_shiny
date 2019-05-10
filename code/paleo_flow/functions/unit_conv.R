@@ -2,9 +2,7 @@
 ### New units can be added here as long as they are applied to the original m3/s data
 
 unit_conv <- function(x, new_unit, date, temp_resolution){
-	if (new_unit == "m3/s"){
-		x * 1 ### no need to convert if requested m3s, already in m3s
-	} else if (new_unit == "cfs"){
+	if (new_unit == "cfs"){
 		x * 35.31467	### convert m3s to cfs
 	} else if(new_unit == "ac-ft"){
 		### Convert to cfs
