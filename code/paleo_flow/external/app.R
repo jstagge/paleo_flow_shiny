@@ -156,19 +156,43 @@ paleo_ts_temp <- reactive({
 #xts(paleo_ts_temp, date_vec)
 
 
+###########################################################################
+## Process for time series plotting, remove date columns and convert units
+###########################################################################
+paleo_ts_plot <- reactive({
+	if (input$site_name == ''){
+		### Generate a blank graph
+		paleo_ts_temp <- data.frame(Observed=rep(NA,300), Annual_Recon=rep(NA,300), Monthly_Recon=rep(NA,300))
+		paleo_ts_plot <- ts(as.matrix(paleo_ts_temp), start=c(1700,1), frequency=12)
+	} else {
+		### Remove the monthly and annual columns before plotting
+		paleo_ts_plot <- paleo_ts_temp() %>%
+			select(date, annual_m3s, obs_m3s, recon_m3s) %>%
+			rename("Annual_Recon" = "annual_m3s") %>%
+			rename("Monthly_Recon" = "recon_m3s") %>%
+			rename("Observed" = "obs_m3s") %>%		
+			ts_long() %>%
+			ts_xts()
+	}
+### Return time series for plot
+	paleo_ts_plot
+})
 
 ###########################################################################
-## Extract dates from time series
+## Calculate maximum flow for plotting range
 ###########################################################################
-#paleo_ts_dates <- reactive({
-#	paste0("", paleo_ts_temp()$Month, " / ", paleo_ts_temp()$Year, "")
-#})
+y_lims <- reactive({ 
+	max_y <- max(c(paleo_ts_plot()), na.rm=TRUE)
+	max_y <- 1.1*max_y
+	c(0,max_y) 
+	})
 
-#year_month <- reactive({
-#		as.Date(paste0(as.numeric(paleo_ts_temp()$Year),"-", as.numeric(paleo_ts_temp()$Month),"-15"))
-#})
-
-
+###########################################################################
+## Output to time series plot
+########################################################################### 
+output$tsPlot <-  renderDygraph({
+    dygraph(paleo_ts_plot())
+	})
 
 
 ###########################################################################

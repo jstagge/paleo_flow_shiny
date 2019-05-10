@@ -30,6 +30,7 @@ require(mailR)
 require(shinyjs)
 require(shinyBS)
 require(digest)
+require(tsbox)
 
 select <- dplyr::select
 

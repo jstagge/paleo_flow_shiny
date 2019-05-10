@@ -3,8 +3,10 @@ column(9,
 	### Uncomment for troubleshooting
     #textOutput("text1"),
     	fluidRow(h2("Reconstructed Time Series Overview")),
-    	    	textOutput("text1"),
-    	    	dataTableOutput('testing_table')
+    	    textOutput("text1"),
+			dygraphOutput("tsPlot"),
+    	    dataTableOutput('testing_table')
 
     ) 	
 )
+
