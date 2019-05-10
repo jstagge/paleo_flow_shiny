@@ -36,3 +36,122 @@ paleo_ts_temp <- reactive({
 				as.data.frame()
 
 		}
+
+
+
+
+  mutate(month_new = case_when(month == NA ~ 1,
+                        TRUE  ~ month))
+
+
+
+test_data <- tibble(year = seq(1900,1910, 1), month=seq(1,11,1), annual_m3s=50, obs_m3s=60, recon_m3s=80, resolution = "annual")
+test_data <- test_data %>%
+ 		mutate(date = as.Date(paste0(year, "-",month,"-01")))
+
+
+
+			mutate_at(c("annual_m3s", "obs_m3s", "recon_m3s"),  funs(. * unit_conversion())) %>% ### Add in the unit scaling
+
+
+
+unit_conv <- function(x, new_unit, date, temp_resolution){
+	if (new_unit == "m3s"){
+		x  ### no need to convert if requested m3s, already in m3s
+	} else if (new_unit == "cfs"){
+		x * 35.31467	### convert m3s to cfs
+	} else if(new_unit == "ac-ft"){
+		### Convert to cfs
+		x <- x * 35.31467
+		### Convert to ac-ft per second
+		x <- x * (1/43560)
+		### Multiply by duration		
+		x <- case_when(
+			temp_resolution == "annual" ~ x * 60*60*24*(365+as.numeric(leap_year(date))),
+			temp_resolution == "monthly" ~ x *  60*60*24*days_in_month(date),
+			TRUE ~ NA_real_
+		)
+		x
+	}
+}
+
+
+unit_conv(x=test_data$annual_m3s, new_unit="m3s", date=test_data$date, temp_resolution="annual")
+unit_conv(x=test_data$annual_m3s, new_unit="cfs", date=test_data$date, temp_resolution="annual")
+unit_conv(x=test_data$annual_m3s, new_unit="ac-ft", date=test_data$date, temp_resolution="annual")
+unit_conv(x=test_data$annual_m3s, new_unit="ac-ft", date=test_data$date, temp_resolution="monthly")
+
+test_data %>%
+	mutate_at(c("annual_m3s", "obs_m3s", "recon_m3s"),  unit_conv, new_unit="cfs", date=date, temp_resolution=resolution) 
+
+
+test_data %>%
+	mutate_at(c("annual_m3s", "obs_m3s", "recon_m3s"),  unit_conv, new_unit="ac-ft", date=.$date, temp_resolution=.$resolution) 
+
+
+
+
+### Calculate flow scaling factor
+unit_conversion <- reactive({
+	### If m3/s
+	unit_conv <- 1
+	### If cfs
+		if (flow_units() == "cfs"){
+			unit_conv <- 35.31467
+		}
+	### If acre-feet
+		if (flow_units() == "ac-ft"){
+			## Convert to cfs
+			unit_conv <- 35.31467
+			### Convert to ac-ft per second
+			unit_conv <- unit_conv * (1/43560)
+
+			### At this point, it needs to be multiplied by duration
+		}
+	unit_conv
+})
+
+					
+			### If Monthly, convert to ac-ft per month
+			if (input$time_resolution=='monthly') {
+				unit_conv <- unit_conv * 60*60*24*days_in_month(paleo_ts_temp()$date)
+			### If annual, convert to ac-ft per year
+			} else if (input$time_resolution=='annual') {
+				unit_conv <- unit_conv * 60*60*24*(365+as.numeric(leap_year(paleo_ts_temp()$date)))
+			}	
+
+
+
+
+
+
+
+
+
+###########################################################################
+## Apply Unit Conversion
+###########################################################################
+### Extract the flow units
+flow_units <- reactive({ input$flow_units })
+
+### Need year month to make ac-ft work
+
+### Calculate flow scaling factor
+unit_conversion <- reactive({
+	### If m3/s
+	unit_conv <- 1
+	### If cfs
+		if (flow_units() == "cfs"){
+			unit_conv <- 35.31467
+		}
+	### If acre-feet
+		if (flow_units() == "ac-ft"){
+			## Convert to cfs
+			unit_conv <- 35.31467
+			### Convert to ac-ft per second
+			unit_conv <- unit_conv * (1/43560)
+
+			### At this point, it needs to be multiplied by duration
+		}
+	unit_conv
+})

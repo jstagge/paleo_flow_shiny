@@ -111,54 +111,27 @@ output$base_author_text <- renderUI({ HTML(paste0("<strong>Author/Originator(s)<
 output$base_link_text <- renderUI({ HTML(paste0('<strong>Source Link </strong> :   <a href="',site_info()$base_link, '">',site_info()$base_link,'</a>')) })
 
 
-
-###########################################################################
-## Extract Unit Conversion
-###########################################################################
-### Extract the flow units
-flow_units <- reactive({ input$flow_units })
-
-### Need year month to make ac-ft work
-
-### Calculate flow scaling factor
-unit_conversion <- reactive({
-	### If m3/s
-	unit_conv <- 1
-	### If cfs
-		if (flow_units() == "cfs"){
-			unit_conv <- 35.31467
-		}
-	### If acre-feet
-		if (flow_units() == "ac-ft"){
-			## Convert to cfs
-			unit_conv <- 35.31467
-			### Convert to ac-ft per second
-			unit_conv <- unit_conv * (1/43560)
-					
-			### If Monthly, convert to ac-ft per month
-			if (input$time_resolution=='monthly') {
-				unit_conv <- unit_conv * 60*60*24*days_in_month(year_month())
-			### If annual, convert to ac-ft per year
-			} else if (input$time_resolution=='annual') {
-				unit_conv <- unit_conv * 60*60*24*(365+as.numeric(leap_year(year_month())))
-			}	
-		}
-	unit_conv
-})
-
 ###########################################################################
 ## Process the time series, keep date columns for later
 ###########################################################################
 ### Include a catch for before you select a site (blank plot)
+### This previously didn't happen
 
 paleo_ts_temp <- reactive({
-	flow_db %>%
-			filter(col_name == input$site_name & resolution == input$time_resolution) %>%
-			as.data.frame()
+	paleo_ts_temp <- flow_db %>%
+			filter(col_name == input$site_name & resolution == input$time_resolution) %>%	### Filter to correct data
+			mutate(month = case_when(resolution == "annual" ~ as.integer(1),
+                        TRUE  ~ month)) %>%   ### Convert month to 1 if it is annual data
+			mutate(date = as.Date(paste0(year, "-", month, "-01")))  ### Add a date column for plotting and other calculations
 
+	if(input$flow_units != "m3/s"){
+		paleo_ts_temp <- paleo_ts_temp %>%
+			mutate_at(c("annual_m3s", "obs_m3s", "recon_m3s"),  unit_conv, new_unit=input$flow_units, date=.$date, temp_resolution=.$resolution) ### Add in the unit scaling
+	}
+
+	paleo_ts_temp %>%
+		as.data.frame()
 })
-
-
 
 
 ### In the bear monthly, there are a bunch of NA dates with annual flow - check this
@@ -192,7 +165,7 @@ paleo_ts_temp <- reactive({
  #     paste("list_id=",list_id(),"site_info=", site_info())
 #    })
 
-output$text1 <- renderText({ input$site_name })
+output$text1 <- renderText({ input$flow_units })
 
 
 output$testing_table <- renderDataTable(paleo_ts_temp())
