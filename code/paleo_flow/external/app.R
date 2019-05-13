@@ -277,6 +277,38 @@ output$tsPlot <-  renderDygraph({
 
 
 ###########################################################################
+## Output to Map
+###########################################################################   
+selected_icon <- makeAwesomeIcon(icon = "star", library = "fa", markerColor = "lightgreen")
+
+site_map <- reactive({ 
+
+	map_df <- site_all %>% 
+		filter(resolution == input$time_resolution) %>%
+		select(site_name, lat, lon) %>%
+		rename("long" = "lon") %>%
+		rename("name" = "site_name") %>%
+		as.data.frame()
+	
+	leaf_map <- leaflet(data = map_df) %>% 
+		addMarkers(~long, ~lat, popup = ~as.character(name), label = ~as.character(name)) %>%
+		#map <- map  %>% addTiles()
+		addProviderTiles(providers$Esri.NatGeoWorldMap)
+	#	addProviderTiles(providers$Stamen.Terrain)
+
+	if(nchar(input$site_name) > 1) {
+		leaf_map <- leaf_map  %>%
+			#addCircleMarkers(~long, ~lat, popup = ~as.character(name), label = ~as.character(name)) %>%
+			addAwesomeMarkers(lng=site_info()$lon, lat=site_info()$lat, label=site_info()$name, icon = selected_icon) %>%
+			setView(lng = site_info()$lon, lat = site_info()$lat, zoom = 8) 
+	}
+	leaf_map
+})
+
+output$mymap <- renderLeaflet({ site_map() })
+
+
+###########################################################################
 ## For troubleshooting
 ###########################################################################   
 
