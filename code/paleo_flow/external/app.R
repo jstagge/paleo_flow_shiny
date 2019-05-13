@@ -265,23 +265,19 @@ extreme_table <- reactive({
 		mutate(recon_m3s = signif(recon_m3s,4)) %>%
 		mutate(obs_m3s = signif(obs_m3s,4)) 
 
-
 	if(input$time_resolution == "monthly") {	
 		extreme_table <- extreme_table %>%
 			mutate(date = format(date, "%b %Y")) %>%
-			rename("Observed" = "obs_m3s") %>%
-			rename("Reconstructed" = "recon_m3s") %>%
 			rename("Year" = "year")  %>%
 			rename("Month" = "month")  %>%
 			rename("Date" = "date") 
 	} else {
 		extreme_table <- extreme_table %>%
 			select(-date, -month) %>%
-			rename("Observed" = "obs_m3s") %>%
-			rename("Reconstructed" = "recon_m3s")  %>%
 			rename("Year" = "year")
 	}
 #paste0("Reconstructed" , input$flow_units)
+#df %>% rename(!!variable := name_of_col_from_df)
 
 	### Return extremes table
 	extreme_table %>%
@@ -289,17 +285,22 @@ extreme_table <- reactive({
 })
 
 ### Calculations for Extreme summary
-most_extreme <- reactive({extremes_table()$Reconst_Flow[1]})
-date_most_extreme <- reactive({as.character(extremes_table()$Date[1])})
+most_extreme <- reactive({extreme_table()$recon_m3s[1]})
+date_most_extreme <- reactive({ if(input$time_resolution == "monthly") {
+		as.character(extreme_table()$Date[1])
+	} else {
+		as.character(extreme_table()$Year[1])
+	}
+})
 
-threshold_exceed <- reactive({dim(extremes_table())[1]})
-length_time_series <- reactive({sum(paleo_ts_subset()[,rec_col_name()] > 0, na.rm=TRUE)})
+threshold_exceed <- reactive({dim(extreme_table())[1]})
+length_time_series <- reactive({sum(paleo_ts_temp()$recon_m3s > 0, na.rm=TRUE)})
 freq_threshold_exceed <- reactive({threshold_exceed()/(1+length_time_series())})
 return_per <- reactive({1/freq_threshold_exceed()})
 
 ### Output for Extreme summary
-output$threshold_text <- renderUI({ HTML(paste0("<strong>Threshold</strong> :   ",input$extreme_flow, " ", flow_units())) })
-output$most_extreme_text <- renderUI({ HTML(paste0("<strong>Most Extreme Flow</strong> :   ",most_extreme(), " ", flow_units())) })
+output$threshold_text <- renderUI({ HTML(paste0("<strong>Threshold</strong> :   ",input$extreme_flow, " ", input$flow_units)) })
+output$most_extreme_text <- renderUI({ HTML(paste0("<strong>Most Extreme Flow</strong> :   ",most_extreme(), " ", input$flow_units)) })
 output$date_most_extreme_text <- renderUI({ HTML(paste0("<strong>Date of Most Extreme Flow</strong> :   ",date_most_extreme())) })
 output$threshold_exceed_text <- renderUI({ HTML(paste0("<strong>Threshold Exceedances</strong> :   ",threshold_exceed())) })
 output$freq_threshold_exceed_text <- renderUI({ HTML(paste0("<strong>Likelihood of Threshold Exceedance</strong> :   ",signif(100*freq_threshold_exceed(),3), " %")) })
@@ -411,9 +412,20 @@ output$mymap <- renderLeaflet({ site_map() })
 ###########################################################################   
 
   output$extreme_table <- DT::renderDataTable({
-   DT::datatable(extreme_table(), plugins='natural', rownames=FALSE, 
+
+	recon_header <- paste0("Reconstructed " , input$flow_units)
+	obs_header <- paste0("Observed " , input$flow_units)
+
+	extreme_out <- extreme_table() %>%
+		rename(!!obs_header := obs_m3s) %>%
+		rename(!!recon_header := recon_m3s) 
+
+   DT::datatable(extreme_out, plugins='natural', rownames=FALSE, 
     	options = list(pageLength = 10, columnDefs = list(list(type = 'natural', targets = 0)) ))
   })
+
+
+
 
 ###########################################################################
 ## For troubleshooting
