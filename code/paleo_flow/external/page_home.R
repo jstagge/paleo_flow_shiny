@@ -17,6 +17,7 @@ column(9,
 			)
 		),
 		textOutput("text1"),
+		dataTableOutput("testing_table"),
 		dygraphOutput("tsPlot"),
         br()
 	),

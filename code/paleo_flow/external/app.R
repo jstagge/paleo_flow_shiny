@@ -203,6 +203,8 @@ paleo_ts_plot <- reactive({
 	paleo_ts_plot
 })
 
+
+
 ###########################################################################
 ## Calculate maximum flow for plotting range
 ###########################################################################
@@ -211,6 +213,103 @@ y_lims <- reactive({
 	max_y <- 1.1*max_y
 	c(0,max_y) 
 	})
+
+###########################################################################
+## Create the extremes input
+###########################################################################
+### Suggest the maximum flow in subset
+min_suggest <- reactive({ floor(min(c(paleo_ts_plot()), na.rm=TRUE)) })
+max_suggest <- reactive({ ceiling(max(c(paleo_ts_plot()), na.rm=TRUE)) })
+
+### Suggest an extreme flow based on the 15th or 85 percentile (depending if gt or less than)
+suggest_extreme <- reactive({ if (input$extreme_direction == "gt") {
+			signif(min_suggest() + 0.85*(max_suggest() - min_suggest()), 2)
+		} else {
+			signif(min_suggest() + 0.15*(max_suggest() - min_suggest()), 2)
+		}
+	})
+	
+### Suggest the size of steps	
+suggest_steps <- reactive({ 
+	suggest_steps <- (max_suggest() - min_suggest())/200
+	signif(suggest_steps, 2)
+	})	
+
+### Create the extreme threshold input	
+output$extreme_flow <- renderUI({
+	sliderInput("extreme_flow", label = "Extreme flow", min = min_suggest(), 
+        max = max_suggest(), value = suggest_extreme(), step = suggest_steps())
+})        
+
+
+###########################################################################
+## Calculate extreme output
+###########################################################################
+extreme_table <- reactive({ 
+	
+	extreme_table <- paleo_ts_temp() %>%
+		select(date, year, month, obs_m3s, recon_m3s)
+
+	if(input$extreme_direction == "gt") {	
+		extreme_table <- extreme_table %>%
+			filter(recon_m3s > input$extreme_flow) %>%
+			arrange(-recon_m3s)
+	} else {
+		extreme_table <- extreme_table %>%
+			filter(recon_m3s < input$extreme_flow) %>%
+			arrange(recon_m3s)
+	}
+
+	### Reorganize columns
+	extreme_table <- extreme_table %>%
+		mutate(recon_m3s = signif(recon_m3s,4)) %>%
+		mutate(obs_m3s = signif(obs_m3s,4)) 
+
+
+	if(input$time_resolution == "monthly") {	
+		extreme_table <- extreme_table %>%
+			mutate(date = format(date, "%b %Y")) %>%
+			rename("Observed" = "obs_m3s") %>%
+			rename("Reconstructed" = "recon_m3s") %>%
+			rename("Year" = "year")  %>%
+			rename("Month" = "month")  %>%
+			rename("Date" = "date") 
+	} else {
+		extreme_table <- extreme_table %>%
+			select(-date, -month) %>%
+			rename("Observed" = "obs_m3s") %>%
+			rename("Reconstructed" = "recon_m3s")  %>%
+			rename("Year" = "year")
+	}
+#paste0("Reconstructed" , input$flow_units)
+
+	### Return extremes table
+	extreme_table %>%
+		as.data.frame()
+})
+
+### Calculations for Extreme summary
+most_extreme <- reactive({extremes_table()$Reconst_Flow[1]})
+date_most_extreme <- reactive({as.character(extremes_table()$Date[1])})
+
+threshold_exceed <- reactive({dim(extremes_table())[1]})
+length_time_series <- reactive({sum(paleo_ts_subset()[,rec_col_name()] > 0, na.rm=TRUE)})
+freq_threshold_exceed <- reactive({threshold_exceed()/(1+length_time_series())})
+return_per <- reactive({1/freq_threshold_exceed()})
+
+### Output for Extreme summary
+output$threshold_text <- renderUI({ HTML(paste0("<strong>Threshold</strong> :   ",input$extreme_flow, " ", flow_units())) })
+output$most_extreme_text <- renderUI({ HTML(paste0("<strong>Most Extreme Flow</strong> :   ",most_extreme(), " ", flow_units())) })
+output$date_most_extreme_text <- renderUI({ HTML(paste0("<strong>Date of Most Extreme Flow</strong> :   ",date_most_extreme())) })
+output$threshold_exceed_text <- renderUI({ HTML(paste0("<strong>Threshold Exceedances</strong> :   ",threshold_exceed())) })
+output$freq_threshold_exceed_text <- renderUI({ HTML(paste0("<strong>Likelihood of Threshold Exceedance</strong> :   ",signif(100*freq_threshold_exceed(),3), " %")) })
+output$return_per_text <- renderUI({ HTML(paste0("<strong>Approximate (Empirical) Return Period</strong> :   ",signif(return_per(),2), " years")) })
+
+
+
+
+
+
 
 ###########################################################################
 ## Prepare Output for download
@@ -307,6 +406,14 @@ site_map <- reactive({
 
 output$mymap <- renderLeaflet({ site_map() })
 
+###########################################################################
+## Output extreme table
+###########################################################################   
+
+  output$extreme_table <- DT::renderDataTable({
+   DT::datatable(extreme_table(), plugins='natural', rownames=FALSE, 
+    	options = list(pageLength = 10, columnDefs = list(list(type = 'natural', targets = 0)) ))
+  })
 
 ###########################################################################
 ## For troubleshooting
@@ -316,9 +423,9 @@ output$mymap <- renderLeaflet({ site_map() })
  #     paste("list_id=",list_id(),"site_info=", site_info())
 #    })
 
-output$text1 <- renderText({ input$site_name })
+output$text1 <- renderText({ extremes_table()$Reconst_Flow[1] })
 
-output$testing_table <- renderDataTable(paleo_ts_temp())
+output$testing_table <- renderDataTable(paleo_ts_plot())
 #output$testing_table <- renderDataTable(paleo_ts_temp())
   
   
