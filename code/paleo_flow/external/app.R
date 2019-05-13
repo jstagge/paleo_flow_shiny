@@ -171,14 +171,22 @@ paleo_ts_plot <- reactive({
 		paleo_ts_temp <- data.frame(Observed=rep(NA,300), Annual_Recon=rep(NA,300), Monthly_Recon=rep(NA,300))
 		paleo_ts_plot <- ts(as.matrix(paleo_ts_temp), start=c(1700,1), frequency=12)
 	} else {
-		### Remove the monthly and annual columns before plotting
-		paleo_ts_plot <- paleo_ts_temp() %>%
-			select(date, annual_m3s, obs_m3s, recon_m3s) %>%
-			rename("Annual_Recon" = "annual_m3s") %>%
-			rename("Monthly_Recon" = "recon_m3s") %>%
-			rename("Observed" = "obs_m3s") %>%		
-			ts_long() %>%
-			ts_xts()
+		if(input$time_resolution == "monthly") {	
+			paleo_ts_plot <- paleo_ts_temp() %>%
+				select(date, obs_m3s, annual_m3s, recon_m3s) %>%
+				rename("Observed" = "obs_m3s") %>%
+				rename("Annual_Recon" = "annual_m3s") %>%
+				rename("Monthly_Recon" = "recon_m3s")
+		} else {
+			paleo_ts_plot <- paleo_ts_temp() %>%
+				select(date, obs_m3s, recon_m3s) %>%
+				rename("Observed" = "obs_m3s") %>%
+				rename("Annual_Recon" = "recon_m3s")
+		}
+
+	paleo_ts_plot <- paleo_ts_plot %>%		
+		ts_long() %>%
+		ts_xts()
 	}
 ### Return time series for plot
 	paleo_ts_plot
@@ -202,21 +210,48 @@ output$tsPlot <-  renderDygraph({
 
  		p <- dygraph(paleo_ts_plot(), main = site_info()$site_name)
 
-	### Before the user has selected a site, create a blank plot
-	} else {
-		blank_ts <- data.frame(Observed=rep(NA,300), Annual_Recon=rep(NA,300), Monthly_Recon=rep(NA,300))
-		blank_plot <- ts(as.matrix(blank_ts), start=c(1700,1), frequency=12)
+		if(input$time_resolution == "monthly") {	
+			p <- p %>%
+				dyAxis("y", label = paste0("Monthly Mean Discharge (",input$flow_units,")"), valueRange=y_lims()) %>%
+				dySeries("Observed", color="#e41a1c", strokeWidth=0.8)  %>%
+ 				dySeries("Monthly_Recon", color="#404040", strokeWidth = 0.8) %>% 
+ 				dySeries("Annual_Recon", color="#377eb8", strokeWidth = 1.2, strokePattern = "dashed")
+		} else {
+			p <- p %>%
+				dyAxis("y", label = paste0("Annual Mean Discharge (",input$flow_units,")"), valueRange=y_lims()) %>%
+#				dySeries("Observed", color="#4477AA", strokeWidth=0.8)  %>% 
+#				dySeries("Annual_Recon", color="#EE6677", strokeWidth = 0.8) 
+				dySeries("Observed", color="#e41a1c", strokeWidth=0.8)  %>% 
+				dySeries("Annual_Recon", color="#404040", strokeWidth = 0.8) 
+		
+#E69F00 orange
+#56B4E9 sky blue
+#009E73 greenish
+#RColorBrewer::brewer.pal(3, "Set2")
 
-		p <- dygraph(blank_plot)
+		}	
+
+	} else {
+		### create a blank plot Before the user has selected a site
+		blank_ts <- data.frame(Observed=rep(NA,300), Annual_Recon=rep(NA,300))
+		blank_plot <- ts(as.matrix(blank_ts), start=c(1700,1), frequency=1)
+
+		p <- dygraph(blank_plot) %>%
+				dyAxis("y", label = paste0("Annual Mean Discharge (",input$flow_units,")")) %>%
+				dySeries("Observed", color="#e41a1c", strokeWidth=0.8)  %>% 
+				dySeries("Annual_Recon", color="#404040", strokeWidth = 0.8) 
 
 	}
 	### Format the time series plot 
 	p  %>% 
 	 	dyRangeSelector() %>% 
   		dyUnzoom() %>% 
-  		dyCrosshair(direction = "vertical")
-
-
+		dyCrosshair(direction = "vertical") %>%
+ 		dyOptions(axisLineWidth = 1.5, drawGrid = FALSE, titleHeight= 28, animatedZooms = TRUE) %>%
+		dyHighlight(highlightSeriesOpts = list(strokeWidth = 0.9), highlightSeriesBackgroundAlpha = 0.9, hideOnMouseOut = TRUE) %>%
+  		dyLegend(show = "always", hideOnMouseOut = FALSE, labelsSeparateLines=TRUE) %>%
+    	dyAxis(name="x",axisLabelFormatter = "function(d){ return d.getFullYear() }"  ) %>%
+    	dyCallbacks(drawCallback = dyRegister())
 })
 
 
@@ -230,7 +265,7 @@ output$tsPlot <-  renderDygraph({
 
 output$text1 <- renderText({ length(input$site_name) })
 
-output$testing_table <- renderDataTable(site_info())
+output$testing_table <- renderDataTable(paleo_ts_temp())
 #output$testing_table <- renderDataTable(paleo_ts_temp())
   
   

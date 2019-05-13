@@ -4,7 +4,7 @@ column(9,
     #textOutput("text1"),
     	fluidRow(h2("Reconstructed Time Series Overview")),
     	    textOutput("text1"),
-			dygraphOutput("tsPlot"),
+			withSpinner(dygraphOutput("tsPlot")),
     	    dataTableOutput('testing_table')
 
     ) 	

@@ -31,6 +31,7 @@ require(shinyjs)
 require(shinyBS)
 require(digest)
 require(tsbox)
+require(shinycssloaders)
 
 select <- dplyr::select
 
@@ -44,6 +45,7 @@ source("./functions/read_in_paleo.R")
 source("./functions/round_df.R")
 source("./functions/dygraph-extra-shiny.R")
 source("./functions/submit_funcs.R")
+source("./functions/unit_conv.R")
 
 source("external/navbar_func.R")
 
