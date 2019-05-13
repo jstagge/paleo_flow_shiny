@@ -202,7 +202,7 @@ y_lims <- reactive({
 	})
 
 ###########################################################################
-## Prepare for download
+## Prepare Output for download
 ###########################################################################
  output$downloadData <- downloadHandler(
     filename = function() { paste(site_info()$col_name, '_',input$flow_units,'.csv', sep='') },
@@ -273,7 +273,7 @@ output$tsPlot <-  renderDygraph({
  #     paste("list_id=",list_id(),"site_info=", site_info())
 #    })
 
-output$text1 <- renderText({ length(input$site_name) })
+output$text1 <- renderText({ site_info()$recon_link })
 
 output$testing_table <- renderDataTable(paleo_ts_temp())
 #output$testing_table <- renderDataTable(paleo_ts_temp())
