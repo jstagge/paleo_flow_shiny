@@ -6,7 +6,7 @@
 output$ui <- renderUI({
 	### If no time resolution is selected
     if (is.null(input$time_resolution))
-      return()
+      return(NULL)
 	### If time resolution is monthly
 	if(input$time_resolution=='monthly'){
 		selectizeInput("site_name", 'Site Location',
@@ -164,9 +164,6 @@ paleo_ts_temp <- reactive({
 ###########################################################################
 ## Process for time series plotting, remove date columns and convert units
 ###########################################################################
-paleo_ts_temp <- data.frame(Observed=rep(NA,300), Annual_Recon=rep(NA,300), Monthly_Recon=rep(NA,300))
-paleo_ts_plot <- ts(as.matrix(paleo_ts_temp), start=c(1700,1), frequency=12)
-
 
 paleo_ts_plot <- reactive({
 	if (is.null(input$site_name)){
@@ -200,12 +197,27 @@ y_lims <- reactive({
 ## Output to time series plot
 ########################################################################### 
 output$tsPlot <-  renderDygraph({
-    dygraph(paleo_ts_plot(), main = site_info()$site_name) %>% #### Create plot and add site name
+	### If the user selects a site	
+	if(nchar(input$site_name) > 1) {
+
+ 		p <- dygraph(paleo_ts_plot(), main = site_info()$site_name)
+
+	### Before the user has selected a site, create a blank plot
+	} else {
+		blank_ts <- data.frame(Observed=rep(NA,300), Annual_Recon=rep(NA,300), Monthly_Recon=rep(NA,300))
+		blank_plot <- ts(as.matrix(blank_ts), start=c(1700,1), frequency=12)
+
+		p <- dygraph(blank_plot)
+
+	}
+	### Format the time series plot 
+	p  %>% 
 	 	dyRangeSelector() %>% 
   		dyUnzoom() %>% 
   		dyCrosshair(direction = "vertical")
-	})
 
+
+})
 
 
 ###########################################################################
@@ -216,7 +228,7 @@ output$tsPlot <-  renderDygraph({
  #     paste("list_id=",list_id(),"site_info=", site_info())
 #    })
 
-output$text1 <- renderText({ col_name()})
+output$text1 <- renderText({ length(input$site_name) })
 
 output$testing_table <- renderDataTable(site_info())
 #output$testing_table <- renderDataTable(paleo_ts_temp())
