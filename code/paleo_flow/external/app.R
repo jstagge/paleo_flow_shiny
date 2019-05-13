@@ -202,6 +202,16 @@ y_lims <- reactive({
 	})
 
 ###########################################################################
+## Prepare for download
+###########################################################################
+ output$downloadData <- downloadHandler(
+    filename = function() { paste(site_info()$col_name, '_',input$flow_units,'.csv', sep='') },
+    content = function(file) {
+      write.csv(paleo_ts_temp(), file)
+    }
+  )
+
+###########################################################################
 ## Output to time series plot
 ########################################################################### 
 output$tsPlot <-  renderDygraph({
