@@ -11,31 +11,9 @@ observe({
 		updateSelectInput(session, "site_name", label = NULL, choices = NULL, selected = query[['site_id']])
 	}
 	output$ui <- renderUI({
-		### If no time resolution is selected
-	    if (is.null(input$time_resolution))
-	      return()
-		### If time resolution is monthly
-		if(input$time_resolution=='monthly'){
-			selectizeInput("site_name", 'Site Location',
-	        	choices = create_site_list(site_all, res="monthly"),
-	   			selected = NULL,
-	   			multiple = FALSE,
-	   			options = list(placeholder = 'Select site location'),
-	   			verbatimTextOutput("value")
-	   		)	
-		### If time resolution is annual
-		} else {
-			selectizeInput("site_name", 'Site Location',
-	 	       choices = create_site_list(site_all, res="annual"),
-	    		selected = NULL,
-	   			multiple = FALSE,
-	   			options = list(placeholder = 'Select site location'),
-	   			verbatimTextOutput("value")
-	   		)
-		}
-	})	        
+   		source("external/dynamic_select/site_dropdown.R", local=TRUE)
+	})
 })
-
 
 ### Create selector for time subset
 output$time_subset <- renderUI({
@@ -51,43 +29,10 @@ output$time_subset <- renderUI({
    	}	
 })
 
-###########################################################################
-## Extract the subset information
-###########################################################################
-### Extract time resolution
-resolution <- reactive({ as.numeric(input$time_resolution) })
-
-### Set name of column for reconstruction
-### No longer needed
-#rec_col_name <- reactive({
-#	if (input$time_resolution == "monthly") {
-#		"Monthly_Recon"
-#	} else if (input$time_resolution == "annual") {
-#		"Annual_Recon"
-#	}
-#})
-
-
 
 ###########################################################################
 ## Determine site information
 ###########################################################################
-### Determine which one of the read in time series from the number
-col_name <- reactive({ 
-	if (is.null(input$site_name)) {
-		"None"
-	} else {
-		input$col_name
-	}
-})
-
-
-#site_info <- reactive({
-#	site_all %>%
-#			filter(col_name == input$site_name & resolution == input$time_resolution) %>%
-#			as.data.frame()
-#})
-
 ### Extract Site Info
 site_info <- reactive({
 	if (is.null(input$site_name)){
@@ -101,7 +46,6 @@ site_info <- reactive({
 			as.data.frame()
 	}
 })
-
 
 ### Extract Site Name
 site_name <- reactive({ site_info()$site_name })
@@ -153,9 +97,18 @@ paleo_ts_temp <- reactive({
 			complete(date = seq.Date(min(date, na.rm=TRUE), max(date, na.rm=TRUE), by="year")) %>%
 			arrange(date)
 	} else if (input$time_resolution == "monthly"){
-		paleo_ts_temp <- paleo_ts_temp %>%
-			complete(date = seq.Date(min(date, na.rm=TRUE), max(date, na.rm=TRUE), by="month")) %>%
-			arrange(date)
+		### Subset to months
+		if(input$time_subset == 0){
+			paleo_ts_temp <- paleo_ts_temp %>%
+				complete(date = seq.Date(min(date, na.rm=TRUE), max(date, na.rm=TRUE), by="month")) %>%
+				arrange(date)
+		} else {
+			paleo_ts_temp <- paleo_ts_temp %>%
+				filter(month == input$time_subset) %>%
+				complete(date = seq.Date(min(date, na.rm=TRUE), max(date, na.rm=TRUE), by="year")) %>%
+				mutate(annual_m3s = NA) %>%
+				arrange(date)
+		}
 	}
 
 	### Export the results as a dataframe
@@ -241,28 +194,31 @@ y_lims <- reactive({
 ###########################################################################
 ## Create the extremes input
 ###########################################################################
-### Suggest the maximum flow in subset
-min_suggest <- reactive({ floor(min(c(paleo_ts_plot()), na.rm=TRUE)) })
-max_suggest <- reactive({ ceiling(max(c(paleo_ts_plot()), na.rm=TRUE)) })
-
-### Suggest an extreme flow based on the 15th or 85 percentile (depending if gt or less than)
-suggest_extreme <- reactive({ if (input$extreme_direction == "gt") {
-			signif(min_suggest() + 0.85*(max_suggest() - min_suggest()), 2)
-		} else {
-			signif(min_suggest() + 0.15*(max_suggest() - min_suggest()), 2)
-		}
-	})
-	
-### Suggest the size of steps	
-suggest_steps <- reactive({ 
-	suggest_steps <- (max_suggest() - min_suggest())/200
-	signif(suggest_steps, 2)
-	})	
-
 ### Create the extreme threshold input	
 output$extreme_flow <- renderUI({
-	sliderInput("extreme_flow", label = "Extreme flow", min = min_suggest(), 
-        max = max_suggest(), value = suggest_extreme(), step = suggest_steps())
+	### Extract just the flows
+	flow_only <- paleo_ts_temp()$recon_m3s
+
+	### Generate suggested values and limit the scale to 60% of the date on the correct tail
+	if (input$extreme_direction == "gt") {
+		suggested_val <- quantile(flow_only, 0.9, na.rm=TRUE)
+		flow_only <- flow_only[flow_only > quantile(flow_only, 0.4, na.rm=TRUE)]
+	} else {
+		suggested_val <- quantile(flow_only, 0.1, na.rm=TRUE)
+		flow_only <- flow_only[flow_only < quantile(flow_only, 0.6, na.rm=TRUE)]
+	}
+
+	### Create clever breaks
+	pretty_steps <- extended_breaks(n = 50)(flow_only)
+	min_suggest <- min(pretty_steps)
+	max_suggest <- max(pretty_steps)
+	suggest_steps <- diff(pretty_steps)[1]
+
+	### Find the suggested value which is closest to a break
+	suggested_val <- pretty_steps[which(abs(pretty_steps-suggested_val)==min(abs(pretty_steps-suggested_val)))]
+
+	sliderInput("extreme_flow", label = "Extreme flow", min = min_suggest, 
+        max = max_suggest, value = suggested_val, step = suggest_steps)
 })        
 
 
@@ -478,6 +434,7 @@ period_compar_dist_df <- reactive({
 ## Output to time series plot
 ########################################################################### 
 output$tsPlot <-  renderDygraph({
+#	source("external/plots/tsPlot.R", local=TRUE)
 	### If the user selects a site	
 	if(nchar(input$site_name) > 1) {
 
@@ -515,6 +472,7 @@ output$tsPlot <-  renderDygraph({
 				dySeries("Annual_Recon", color="#404040", strokeWidth = 0.8) 
 
 	}
+
 	### Format the time series plot 
 	p  %>% 
 	 	dyRangeSelector() %>% 
@@ -525,6 +483,7 @@ output$tsPlot <-  renderDygraph({
   		dyLegend(show = "always", hideOnMouseOut = FALSE, labelsSeparateLines=TRUE) %>%
     	dyAxis(name="x",axisLabelFormatter = "function(d){ return d.getFullYear() }"  ) %>%
     	dyCallbacks(drawCallback = dyRegister())
+
 })
 
 
@@ -580,25 +539,24 @@ output$mymap <- renderLeaflet({ site_map() })
 ## Output to distribution (Obs vs Reconstr) plot
 ###########################################################################   
 ### create range for density plot
-	density_range <- reactive({
-		l <- density(paleo_ts_temp()$recon_m3s, na.rm=TRUE)
-		range(l$x)
-	})
+output$extreme_distr <-renderPlot({
+		plot_df <- paleo_ts_temp() %>%
+			select(recon_m3s) %>%
+			drop_na()
 
- output$extreme_distr <-renderPlot({
+		l <- density(paleo_ts_temp()$recon_m3s, na.rm=TRUE)
+		density_range <- range(l$x)
+
  		### Create the plot
-  		p <- ggplot(paleo_ts_temp(), aes(x=recon_m3s)) %>%
+  		p <- ggplot(plot_df, aes(x=recon_m3s)) %>%
   			+ geom_density(fill="#1b9e77", alpha=0.4) %>%
   			+ geom_vline(xintercept = input$extreme_flow, colour="red", linetype="longdash") %>%
   			+ scale_x_continuous(name=paste0("Streamflow (", input$flow_units,")")) %>%
   			+ scale_y_continuous(name="Density", expand=c(0,0)) %>%
-  			+ xlim(density_range()) %>%
+  			+ xlim(density_range) %>%
   			+ theme_light()
   		p
    })	
-
-
-
 
 ###########################################################################
 ## Output Period Comparisons to tables
@@ -723,9 +681,9 @@ output$gof_table_simple <-renderTable({
  #     paste("list_id=",list_id(),"site_info=", site_info())
 #    })
 
-output$text1 <- renderText({ extremes_table()$Reconst_Flow[1] })
+output$text1 <- renderText({ input$extreme_flow })
 
-output$testing_table <- renderDataTable(gof_df())
+output$testing_table <- renderDataTable(paleo_ts_plot())
 #output$testing_table <- renderDataTable(paleo_ts_temp())
   
   
