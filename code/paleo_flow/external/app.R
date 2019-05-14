@@ -300,8 +300,21 @@ return_per <- reactive({1/freq_threshold_exceed()})
 
 ### Output for Extreme summary
 output$threshold_text <- renderUI({ HTML(paste0("<strong>Threshold</strong> :   ",input$extreme_flow, " ", input$flow_units)) })
-output$most_extreme_text <- renderUI({ HTML(paste0("<strong>Most Extreme Flow</strong> :   ",most_extreme(), " ", input$flow_units)) })
-output$date_most_extreme_text <- renderUI({ HTML(paste0("<strong>Date of Most Extreme Flow</strong> :   ",date_most_extreme())) })
+
+output$most_extreme_text <- renderUI({ if(input$extreme_direction == "gt") {
+		HTML(paste0("<strong>Maximum Flow</strong> :   ",most_extreme(), " ", input$flow_units))
+	} else {
+		HTML(paste0("<strong>Minimum Flow</strong> :   ",most_extreme(), " ", input$flow_units))
+	}
+})
+
+output$date_most_extreme_text <- renderUI({ if(input$extreme_direction == "gt") {
+		HTML(paste0("<strong>Date of Maximum Flow</strong> :    ",date_most_extreme()))
+	} else {
+		HTML(paste0("<strong>Date of Minimum Flow</strong> :    ",date_most_extreme()))
+	}
+})
+
 output$threshold_exceed_text <- renderUI({ HTML(paste0("<strong>Threshold Exceedances</strong> :   ",threshold_exceed())) })
 output$freq_threshold_exceed_text <- renderUI({ HTML(paste0("<strong>Likelihood of Threshold Exceedance</strong> :   ",signif(100*freq_threshold_exceed(),3), " %")) })
 output$return_per_text <- renderUI({ HTML(paste0("<strong>Approximate (Empirical) Return Period</strong> :   ",signif(return_per(),2), " years")) })
@@ -424,7 +437,26 @@ output$mymap <- renderLeaflet({ site_map() })
     	options = list(pageLength = 10, columnDefs = list(list(type = 'natural', targets = 0)) ))
   })
 
+###########################################################################
+## Output to distribution (Obs vs Reconstr) plot
+###########################################################################   
+### create range for density plot
+	density_range <- reactive({
+		l <- density(paleo_ts_temp()$recon_m3s, na.rm=TRUE)
+		range(l$x)
+	})
 
+ output$extreme_distr <-renderPlot({
+ 		### Create the plot
+  		p <- ggplot(paleo_ts_temp(), aes(x=recon_m3s)) %>%
+  			+ geom_density(fill="#1b9e77", alpha=0.4) %>%
+  			+ geom_vline(xintercept = input$extreme_flow, colour="red", linetype="longdash") %>%
+  			+ scale_x_continuous(name=paste0("Streamflow (", input$flow_units,")")) %>%
+  			+ scale_y_continuous(name="Density", expand=c(0,0)) %>%
+  			+ xlim(density_range()) %>%
+  			+ theme_light()
+  		p
+   })	
 
 
 ###########################################################################
