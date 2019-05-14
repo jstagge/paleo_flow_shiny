@@ -14,11 +14,11 @@ column(9,
 	      	tableOutput("period_info_table"),
 	      	fluidRow(column(6,
 	      	h4("Extreme Flows"),
-	       	tableOutput("period_extreme_table")
+	       		tableOutput("period_extreme_table")
 	       	),
 	       	column(6,
-	       	h4("Threshold Exceedances"),
-	       	tableOutput("period_threshold_table")
+	       		h4("Threshold Exceedances"),
+	       		tableOutput("period_threshold_table")
 	       	)),
 	       	h3("Flow Distribution Comparison"),
 	       	helpText("Flow distributions can be compared between the two periods. Plot will adjust automatically to changes in period. All flows shown on a log scale."),

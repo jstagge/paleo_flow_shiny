@@ -172,6 +172,30 @@ paleo_ts_temp <- reactive({
 #xts(paleo_ts_temp, date_vec)
 
 
+
+###########################################################################
+## Create the periods input
+###########################################################################
+current_year <-  as.integer(format(Sys.Date(), "%Y"))
+
+first_year <- reactive({ min(paleo_ts_temp()$year, na.rm=TRUE) })
+last_year <- reactive({ max(paleo_ts_temp()$year, na.rm=TRUE) })
+
+rec_slider_2_start <- reactive({ceiling(first_year()/100)*100} )
+
+### Create the Period 1 input slider
+output$period_slider_1 <- renderUI({
+sliderInput("period_slider_1", label = "Period 1", min = first_year(), 
+        max = last_year(), value = c(1900,2000), sep = "")
+})        
+  
+### Create the Period 2 input slider
+output$period_slider_2 <- reactiveUI(function() {
+sliderInput("period_slider_2", label = "Period 2 (years)", min = first_year(), 
+        max = last_year(), value = c(rec_slider_2_start(),rec_slider_2_start()+diff(input$period_slider_1)), sep = "")
+})   
+
+
 ###########################################################################
 ## Process for time series plotting, remove date columns and convert units
 ###########################################################################
@@ -321,9 +345,124 @@ output$return_per_text <- renderUI({ HTML(paste0("<strong>Approximate (Empirical
 
 
 
+###########################################################################
+## Calculate Period Comparison
+###########################################################################
+### Extract Periods 1 and 2
+period_1_subset <- reactive({ 
+ 	paleo_ts_temp() %>%
+		filter(year >= input$period_slider_1[[1]] & year <= input$period_slider_1[[2]])
+})
 
+period_2_subset <- reactive({ 
+ 	paleo_ts_temp() %>%
+		filter(year >= input$period_slider_2[[1]] & year <= input$period_slider_2[[2]])
+})
 
+period_vec <- reactive({c(paste0(input$period_slider_1[[1]], " - ", input$period_slider_1[[2]]), paste0(input$period_slider_2[[1]], " - ", input$period_slider_2[[2]]))})
 
+### Create a dataframe for Period Information
+period_info_df <- reactive({  
+	### Create duration data
+	duration_vec <- c((input$period_slider_1[[2]] - input$period_slider_1[[1]]), (input$period_slider_2[[2]] - input$period_slider_2[[1]]))		
+  ### Compose data frame
+    data.frame(
+      Measure = c("Period", "Number of Years"),
+      Period_1 = as.character(c(period_vec()[1], duration_vec[1] )),
+      Period_2 = as.character(c(period_vec()[2], duration_vec[2] )), 
+      stringsAsFactors=FALSE)
+})
+      
+
+### Create a dataframe for Period Extreme Comparison
+period_extreme_df <- reactive({  
+	### Max flows
+   max_p1 <- signif(max(period_1_subset()$recon_m3s, na.rm=TRUE), 4)
+   max_p2 <- signif(max(period_2_subset()$recon_m3s, na.rm=TRUE), 4)
+   
+	### Min flows
+   min_p1 <- signif(min(period_1_subset()$recon_m3s, na.rm=TRUE), 4)
+   min_p2 <- signif(min(period_2_subset()$recon_m3s, na.rm=TRUE), 4)
+   
+	if(input$time_resolution == "monthly") {
+		date_max_p1 <- period_1_subset()$date[which.max(period_1_subset()$recon_m3s)]
+   		date_max_p2 <- period_2_subset()$date[which.max(period_2_subset()$recon_m3s)]
+		date_min_p1 <- period_1_subset()$date[which.min(period_1_subset()$recon_m3s)]
+   		date_min_p2 <- period_2_subset()$date[which.min(period_2_subset()$recon_m3s)]
+	} else {
+		date_max_p1 <- period_1_subset()$year[which.max(period_1_subset()$recon_m3s)]
+   		date_max_p2 <- period_2_subset()$year[which.max(period_2_subset()$recon_m3s)]
+		date_min_p1 <- period_1_subset()$year[which.min(period_1_subset()$recon_m3s)]
+   		date_min_p2 <- period_2_subset()$year[which.min(period_2_subset()$recon_m3s)]
+	}
+   
+  ### Compose data frame
+    data.frame(
+      Measure = c("Period", paste0("Maximum Flow (",input$flow_units,")"),  "Date of Maximum",  paste0("Minimum Flow (",input$flow_units,")"), "Date of Minimum"),
+      Period_1 = as.character(c(period_vec()[1], 
+      						max_p1,date_max_p1,min_p1,date_min_p1
+      						)),
+      Period_2 = as.character(c(period_vec()[2], 
+                             max_p2,date_max_p2,min_p2,date_min_p2                        
+                             )), 
+      stringsAsFactors=FALSE)
+})
+
+period_threshold_df <- reactive({  
+   ### Threshold Exceedances
+   if (input$extreme_direction == "gt") {
+		threshold_exceed_p1 <- sum(period_1_subset()$recon_m3s > input$extreme_flow, na.rm=TRUE)
+		threshold_exceed_p2 <- sum(period_2_subset()$recon_m3s > input$extreme_flow, na.rm=TRUE)
+	} else {
+		threshold_exceed_p1 <- sum(period_1_subset()$recon_m3s < input$extreme_flow, na.rm=TRUE)
+		threshold_exceed_p2 <- sum(period_2_subset()$recon_m3s < input$extreme_flow, na.rm=TRUE)
+	}
+	
+	length_p1 <- sum(period_1_subset()$recon_m3s > 0, na.rm=TRUE)
+	length_p2 <- sum(period_2_subset()$recon_m3s > 0, na.rm=TRUE)
+	
+	freq_threshold_p1 <- threshold_exceed_p1/(1+length_p1)
+	freq_threshold_p2 <- threshold_exceed_p2/(1+length_p2)
+	
+	freq_threshold_p1 <- paste0(signif(100*freq_threshold_p1,3), " %")
+	freq_threshold_p2 <- paste0(signif(100*freq_threshold_p2,3), " %")
+
+  ### Compose data frame
+    data.frame(
+      Measure = c("Period",
+               paste0("Threshold (",input$flow_units,")"),
+               "Threshold Exceedances",
+               "Likelihood of Exceedance"),
+      Period_1 = as.character(c(period_vec()[1], 
+      						input$extreme_flow,threshold_exceed_p1,freq_threshold_p1
+      						)),
+      Period_2 = as.character(c(period_vec()[2], 
+                             input$extreme_flow,threshold_exceed_p2,freq_threshold_p2                           
+                             )), 
+      stringsAsFactors=FALSE)
+})
+      
+
+###########################################################################
+## Create Data for Period Comparison plot
+########################################################################### 
+period_compar_dist_df <- reactive({
+
+		period_1_subset <- period_1_subset() %>% 
+			drop_na(recon_m3s) %>%
+			mutate(rank = rank(recon_m3s)) %>%
+			mutate(plot_pos = rank/(length(recon_m3s) + 1)) %>%
+			mutate(period = period_vec()[1])
+
+		period_2_subset <- period_2_subset() %>% 
+			drop_na(recon_m3s) %>%
+			mutate(rank = rank(recon_m3s)) %>%
+			mutate(plot_pos = rank/(length(recon_m3s) + 1)) %>%
+			mutate(period = period_vec()[2])
+
+		### Return result
+		rbind(period_1_subset, period_2_subset)
+})
 
 ###########################################################################
 ## Prepare Output for download
@@ -459,6 +598,39 @@ output$mymap <- renderLeaflet({ site_map() })
    })	
 
 
+
+
+###########################################################################
+## Output Period Comparisons to tables
+###########################################################################   
+output$period_info_table <-renderTable({
+    period_info_df()
+  })
+  
+output$period_extreme_table <-renderTable({
+    period_extreme_df()
+  })
+  
+output$period_threshold_table <-renderTable({
+    period_threshold_df()
+  })
+  
+  
+  
+###########################################################################
+## Output to Period distribution plot
+###########################################################################   
+ output$period_compar_dist <-renderPlot({
+ 		### Create the plot
+  		ggplot(period_compar_dist_df(), aes(x=plot_pos*100, y=recon_m3s, colour=period)) %>%
+			+ geom_line() %>%
+			+ scale_colour_brewer(name = "Period", type="qual", palette="Dark2") %>%
+			+ scale_x_continuous(name="Percentile (%)") %>%
+			+ scale_y_log10(name=paste0("Streamflow (",input$flow_units,")"), breaks = c(1,5, 10,50,100,1000,10000)) %>% #trans_breaks("log10", function(x) 10^x))
+			+ annotation_logticks(sides="l") %>%
+			+ theme_light()
+})	
+
 ###########################################################################
 ## For troubleshooting
 ###########################################################################   
@@ -469,7 +641,7 @@ output$mymap <- renderLeaflet({ site_map() })
 
 output$text1 <- renderText({ extremes_table()$Reconst_Flow[1] })
 
-output$testing_table <- renderDataTable(paleo_ts_plot())
+output$testing_table <- renderDataTable(period_compar_dist_df())
 #output$testing_table <- renderDataTable(paleo_ts_temp())
   
   
