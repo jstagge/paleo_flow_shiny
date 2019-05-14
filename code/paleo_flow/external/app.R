@@ -564,17 +564,35 @@ output$extreme_distr <-renderPlot({
 ###########################################################################
 ## Output Period Comparisons to tables
 ###########################################################################   
-output$period_info_table <-renderTable({
-    period_info_df()
-  })
+output$period_info_table <- DT::renderDataTable({ 
+		DT::datatable(period_info_df(), options = list(paging=FALSE, searching=FALSE, ordering=FALSE, info=FALSE), rownames= FALSE)  %>% 
+        DT::formatStyle(2,backgroundColor="#daf1e7") %>%
+		DT::formatStyle(3,backgroundColor="#fef0e6")
+})
+
+output$period_extreme_table <- DT::renderDataTable({ 
+		DT::datatable(period_extreme_df(), options = list(paging=FALSE, searching=FALSE, ordering=FALSE, info=FALSE), rownames= FALSE) %>% 
+        DT::formatStyle(2,backgroundColor="#daf1e7") %>%
+		DT::formatStyle(3,backgroundColor="#fef0e6")
+})
+
+output$period_threshold_table <- DT::renderDataTable({ 
+		DT::datatable(period_threshold_df(), options = list(paging=FALSE, searching=FALSE, ordering=FALSE, info=FALSE), rownames= FALSE) %>% 
+        DT::formatStyle(2,backgroundColor="#daf1e7") %>%
+		DT::formatStyle(3,backgroundColor="#fef0e6")
+})
+ 
+#output$period_info_table <- renderTable({
+    #period_info_df()
+#})
+
+#output$period_extreme_table <-renderTable({
+ #  period_extreme_df()
+#})
   
-output$period_extreme_table <-renderTable({
-    period_extreme_df()
-  })
-  
-output$period_threshold_table <-renderTable({
-    period_threshold_df()
-  })
+#output$period_threshold_table <-renderTable({
+ #  period_threshold_df()
+ #})
   
   
   
