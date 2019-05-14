@@ -10,7 +10,7 @@ column(9,
 				condition="$('html').hasClass('shiny-busy')",
 				fluidRow(column(3, HTML('<div class="alert alert-info" role="alert">Data loading.</div>')))
 			),
-        	helpText("This tab allows a quick comparison between two user-selected historical periods. Select the period on the left.")  ,	
+        	helpText("This tab allows a quick comparison between two user-selected historical periods. Select the period on the left. Extreme threshold can be adjusted.")  ,	
 	      	tableOutput("period_info_table"),
 	      	fluidRow(column(6,
 	      	h4("Extreme Flows"),
@@ -21,7 +21,7 @@ column(9,
 	       		tableOutput("period_threshold_table")
 	       	)),
 	       	h3("Flow Distribution Comparison"),
-	       	helpText("Flow distributions can be compared between the two periods. Plot will adjust automatically to changes in period. All flows shown on a log scale."),
-	       	plotOutput("period_compar_dist")	
+	       	helpText("Flow distributions can be compared between the two periods. Plot will adjust automatically to changes in period. br(),			
+			plotOutput("period_compar_dist")
 	)			
 )

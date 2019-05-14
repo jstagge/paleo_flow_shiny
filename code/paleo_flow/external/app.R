@@ -417,7 +417,10 @@ period_compar_dist_df <- reactive({
 			mutate(period = period_vec()[2])
 
 		### Return result
-		rbind(period_1_subset, period_2_subset)
+		period_compar_dist_df <- rbind(period_1_subset, period_2_subset)
+		period_compar_dist_df %>%
+			mutate(period = factor(period, levels = period_vec()))
+
 })
 
 ###########################################################################
@@ -576,13 +579,14 @@ output$period_threshold_table <-renderTable({
   
   
 ###########################################################################
-## Output to Period distribution plot
+## Output to Period distribution plots
 ###########################################################################   
- output$period_compar_dist <-renderPlot({
+output$period_compar_dist <-renderPlot({
  		### Create the plot
   		ggplot(period_compar_dist_df(), aes(x=plot_pos*100, y=recon_m3s, colour=period)) %>%
 			+ geom_line() %>%
-			+ scale_colour_brewer(name = "Period", type="qual", palette="Dark2") %>%
+			+ geom_hline(yintercept = input$extreme_flow, colour="grey40", linetype="longdash") %>%
+  			+ scale_colour_brewer(name = "Period", type="qual", palette="Dark2") %>%
 			+ scale_x_continuous(name="Percentile (%)") %>%
 			+ scale_y_log10(name=paste0("Streamflow (",input$flow_units,")"), breaks = c(1,5, 10,50,100,1000,10000)) %>% #trans_breaks("log10", function(x) 10^x))
 			+ annotation_logticks(sides="l") %>%
@@ -590,6 +594,25 @@ output$period_threshold_table <-renderTable({
 })	
 
 
+output$period_compar_hist <-renderPlot({
+		l <- density(period_compar_dist_df()$recon_m3s, na.rm=TRUE)
+		density_range <- range(l$x)
+
+ 		### Create the plot
+  		ggplot(period_compar_dist_df(), aes(x=recon_m3s,  fill=period, color=period)) %>%		
+			#+ geom_histogram(position="identity", alpha=0.5) %>%
+			+ geom_density(alpha=0.5) %>%
+			+ scale_fill_brewer(name = "Period", type="qual", palette="Dark2") %>%
+			+ scale_colour_brewer(name = "Period", type="qual", palette="Dark2") %>%
+  			+ geom_vline(xintercept = input$extreme_flow, colour="grey40", linetype="longdash") %>%
+  			+ scale_x_continuous(name=paste0("Streamflow (", input$flow_units,")")) %>%
+  			+ scale_y_continuous(name="Density", expand=c(0,0)) %>%
+  			+ xlim(density_range) %>%
+  			+ theme_light()
+})	
+
+#y = ..scaled.., 
+#y = ..count..,
 
 ###########################################################################
 ## Produce a dataframe holding observed and reconstructed values for goodness of fit calcs
