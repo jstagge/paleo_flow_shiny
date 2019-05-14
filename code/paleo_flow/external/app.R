@@ -631,6 +631,90 @@ output$period_threshold_table <-renderTable({
 			+ theme_light()
 })	
 
+
+
+###########################################################################
+## Produce a dataframe holding observed and reconstructed values for goodness of fit calcs
+###########################################################################
+gof_df <- reactive({
+	gof_df <- paleo_ts_temp() %>%
+		drop_na(obs_m3s, recon_m3s)	### drop rows that don't have 
+
+	if(input$time_resolution == "monthly") {	
+		gof_df <- gof_df %>%
+			mutate(plot_date = as.character(format(date, "%b %Y")))
+	} else {
+		gof_df <- gof_df %>%
+			mutate(plot_date = as.character(year))
+	}
+
+	gof_df <- gof_df %>%
+		mutate(Reconstructed.tooltip = paste0("<b>", plot_date,"</b><br>Observed: ", signif(obs_m3s,3),"<br>Reconstructed: ", signif(recon_m3s,3), " <span style='display:inline-block; width: 5;'></span>" )) %>%
+		mutate(abline = NA) %>%	
+		select(obs_m3s, recon_m3s, Reconstructed.tooltip, abline) %>%
+		rename(Observed = obs_m3s) %>%
+		rename(Reconstructed = recon_m3s) %>%
+		as.data.frame()
+	
+	#gof_df
+	### Add a blank column with two enpoints to produce the 1:1 line
+  	rbind(gof_df, data.frame(Observed=y_lims(), Reconstructed=c(NA, NA), Reconstructed.tooltip=c("", ""), abline=y_lims()))
+  	  
+})
+
+
+###########################################################################
+## Output to goodness of fit (Obs vs Reconstr) plot
+###########################################################################   
+ output$gof_scatter <- renderGvis({
+	gvisComboChart(gof_df(), xvar = "Observed", yvar = c("Reconstructed", "Reconstructed.tooltip", "abline"),
+          options=list(seriesType='scatter',
+ 			title=NULL,
+ 			series='{1: {type:\"line\"}}',
+            explorer="{actions: ['dragToZoom' , 'rightClickToReset'], maxZoomIn:0.05}",
+            legend="none",
+            tooltip="{isHtml:'True'}",                                                                 
+            vAxis=paste0("{title:'Reconstructed Flow (", input$flow_units, ")'}"),                        
+            hAxis=paste0("{title:'Observed Flow (", input$flow_units, ")'}"),                    
+            width='100%', height=500,
+            chartArea= "{'width': '80%', 'height': '80%'}"),
+            )                   
+  })
+     
+
+###########################################################################
+## Output to distribution (Obs vs Reconstr) plot
+###########################################################################   
+### create range for density plot
+	density_range <- reactive({
+		l <- density(gof_distr_df()$Flow, na.rm=TRUE)
+		range(l$x)
+	})
+	
+ output$gof_distr <-renderPlot({
+ 		
+ 		### Create the plot
+  		p <- ggplot(gof_distr_df(), aes(x=Flow, fill=Data))
+  		p <- p + geom_density(alpha=0.3)
+  		#p <- p + scale_fill_brewer(name="Data Source", palette="Dark2")
+  		p <- p + scale_fill_manual(name="Data Source", values=c("#d95f02", "#1b9e77"))
+  		p <- p + scale_x_continuous(name=paste0("Streamflow (",flow_units(),")"))
+  		p <- p + scale_y_continuous(name="Density", expand=c(0,0))
+  		p <- p + xlim(density_range())
+  		p <- p + theme_light()
+  		p
+   })	
+
+
+
+###########################################################################
+## Output gof to a table
+###########################################################################   
+output$gof_table_simple <-renderTable({
+    gof_table_df()
+  }, digits=3)
+
+
 ###########################################################################
 ## For troubleshooting
 ###########################################################################   
@@ -641,7 +725,7 @@ output$period_threshold_table <-renderTable({
 
 output$text1 <- renderText({ extremes_table()$Reconst_Flow[1] })
 
-output$testing_table <- renderDataTable(period_compar_dist_df())
+output$testing_table <- renderDataTable(gof_df())
 #output$testing_table <- renderDataTable(paleo_ts_temp())
   
   
