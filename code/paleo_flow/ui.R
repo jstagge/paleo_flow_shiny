@@ -42,34 +42,34 @@ shinyUI(navbarPageWithText(
 	#collapsible=TRUE,
 	id="nav_value",
 	fluidRow(
-		source("external/sidebar.R",local=T)$value,
+		source("external/pages/sidebar.R",local=T)$value,
 		conditionalPanel(
 			condition = "input.nav_value == 'home'",
-			source("external/page_home.R",local=T)$value
+			source("external/pages/page_home.R",local=T)$value
 		),
 		conditionalPanel(
 			condition = "input.nav_value == 'extremes'",
-			source("external/page_extremes.R",local=T)$value
+			source("external/pages/page_extremes.R",local=T)$value
 		),
 		conditionalPanel(
 			condition = "input.nav_value == 'periods'",
-			source("external/page_periods.R",local=T)$value
+			source("external/pages/page_periods.R",local=T)$value
 		),		
 		conditionalPanel(
 			condition = "input.nav_value == 'gof'",
-			source("external/page_gof.R",local=T)$value
+			source("external/pages/page_gof.R",local=T)$value
 		),
 		conditionalPanel(
 			condition = "input.nav_value == 'background'",
-			source("external/page_background.R",local=T)$value
+			source("external/pages/page_background.R",local=T)$value
 		),		
 		conditionalPanel(
 			condition = "input.nav_value == 'submit'",
-			source("external/page_submit.R",local=T)$value
+			source("external/pages/page_submit.R",local=T)$value
 		),		
 		conditionalPanel(
 			condition = "input.nav_value == 'about'",
-			source("external/page_about.R",local=T)$value
+			source("external/pages/page_about.R",local=T)$value
 		)			
 	)
 	#footer=HTML("<div class = 'navbar navbar-fixed-bottom' style='line-height:30px; height:30px;'><div class = 'navbar-inner'><div class = 'container footer-margin-top'><p class = 'muted pull-left'>Created by hwhd</p> <p class = 'muted pull-right'>MyCompany  2014</p> </div></div> </div> ")

@@ -47,7 +47,7 @@ source("./functions/dygraph-extra-shiny.R")
 source("./functions/submit_funcs.R")
 source("./functions/unit_conv.R")
 
-source("external/navbar_func.R")
+source("external/pages/navbar_func.R")
 
 ###########################################################################
 ## Read in site information
