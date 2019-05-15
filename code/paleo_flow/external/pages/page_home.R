@@ -7,7 +7,10 @@ column(9,
 			condition = "input.site_name == ''",
 			fluidRow(
 				column(12, 
-					HTML('<div class="alert alert-warning" role="alert">On the left, please select Annual/Monthly reconstruction and a Site to begin.</div>')
+					HTML('<div class="alert alert-dismissible" style="background-color:#5CBEE4;">
+  <button type="button" class="close" data-dismiss="alert">&times;</button>
+  <strong>On the left,</strong> please select <strong>time resolution</strong> and a <strong>site</strong> to begin.
+</div>')
 				)
 			)
 		),
@@ -15,7 +18,7 @@ column(9,
 			condition = "output.rwarn == 'warn' | output.nsewarn == 'warn'",
 			fluidRow(
 				column(12, 
-					HTML('<div class="alert alert-warning" role="alert">There may be fitting issues with this reconstuction, please check the Goodness of Fit tab for details.</div>')
+					HTML('<div class="alert alert-dismissible alert-warning" role="alert"><button type="button" class="close" data-dismiss="alert">&times;</button>There may be fitting issues with this reconstuction, please check the Goodness of Fit tab for details.</div>')
 				)
 			)
 		)
