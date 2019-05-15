@@ -1,6 +1,6 @@
 ### Sidebar column 
 	conditionalPanel(
-	condition = "input.nav_value != 'submit' & input.nav_value != 'about' ",
+	condition = "input.nav_value != 'submit' & input.nav_value != 'about' &  input.nav_value != 'background'",
 column(3,
 
 		
