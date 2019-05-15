@@ -38,7 +38,7 @@ saveData <- function(data, file, pw) {
           to = "stagge.11@osu.edu",
           subject = "New paleoflow record",
           body = "This is the body",
-          smtp = list(host.name = "smtp.gmail.com", port = 465, user.name = paleoflowsubmit, passwd = pw, ssl = TRUE),
+          smtp = list(host.name = "smtp.gmail.com", port = 465, user.name = "paleoflowsubmit", passwd = pw, ssl = TRUE),
           authenticate = TRUE,
           send = TRUE,
           attach.files = c(meta_file, reconst_file) ,
