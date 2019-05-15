@@ -33,6 +33,7 @@ require(digest)
 require(tsbox)
 require(shinycssloaders)
 require(DT)
+require(keyringr)
 
 select <- dplyr::select
 
@@ -67,17 +68,28 @@ flow_db <- readRDS(file.path(data_path,"flow_db.rds"))
 ###########################################################################
 ## Needed for submissions
 ###########################################################################
+# which fields get saved 
+fieldsAll <- c("name", "user_email", "user_notes")
+
+# which fields are mandatory
+fieldsMandatory <- c("recon_name", "user_email", "upload")
+
+# directory where responses get stored
+responsesDir <- file.path("submissions")
 
 # CSS to use in the app
 appCSS <-
   ".mandatory_star { color: red; }
    .shiny-input-container { margin-top: 25px; }
    #submit_msg { margin-left: 15px; }
-   #error { color: red; }
-   body { background: #fcfcfc; }
-   #header { background: #fff; border-bottom: 1px solid #ddd; margin: -20px -15px 0; padding: 15px 15px 10px; }
+   error { color: red; }
   "
 
 ###########################################################################
 ## Read in email login	
 ###########################################################################
+### Create a new password in linux
+login_pw  <- decrypt_gk_pw("user jhstagge domain ditigalocean")
+
+
+

@@ -19,7 +19,7 @@ humanTime <- function() {
 }
 
 # save the results to a file
-saveData <- function(data, file, login) {
+saveData <- function(data, file, pw) {
   
   user_name <- chartr(" .,'", "____", data[[1]])
   
@@ -35,10 +35,10 @@ saveData <- function(data, file, login) {
 
  ### Send an email with a backup copy  
   mailR::send.mail(from = "noresponse@donotrespond.com",
-          to = "james.stagge@usu.edu",
+          to = "stagge.11@osu.edu",
           subject = "New paleoflow record",
           body = "This is the body",
-          smtp = list(host.name = "smtp.gmail.com", port = 465, user.name = login[[1]], passwd = login[[2]], ssl = TRUE),
+          smtp = list(host.name = "smtp.gmail.com", port = 465, user.name = paleoflowsubmit, passwd = pw, ssl = TRUE),
           authenticate = TRUE,
           send = TRUE,
           attach.files = c(meta_file, reconst_file) ,
