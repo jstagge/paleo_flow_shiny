@@ -661,6 +661,39 @@ gof_df <- reactive({
   	  
 })
 
+###########################################################################
+## Calculate GOF
+###########################################################################
+	
+gof_results <- reactive({
+	### Calculate goodness of fit statistics for time series
+	gof_results <- paleo_ts_temp() %>%
+		select(obs_m3s, recon_m3s) %>%
+		drop_na(obs_m3s, recon_m3s)	### drop rows that don't have 
+
+ 	gof_ts(gof_results$recon_m3s, gof_results$obs_m3s)
+
+})
+
+###########################################################################
+## Output to GOF tables
+###########################################################################
+output$cal_table <-renderTable({
+    data.frame(Metric = c("R^2 (Variance Explained)", "RMSE (Root Mean Sq Error)", "Mean Absolute Error", "Mean Error"), 
+			Calculated = c((gof_results()$R)^2, gof_results()$RMSE, gof_results()$MAE, gof_results()$ME), 
+			Reported = rep(NA, 4), 
+			Goal = c(1, 0, 0, 0)
+		)
+  })
+
+output$val_table<-renderTable({
+    data.frame(Metric = c("NSE/RE", "RMSE (Root Mean Sq Error)", "Methods"), 
+			Calculated = c(gof_results()$NSE, NA, NA), 
+			Reported = rep(NA, 3), 
+			Goal = c(1, 0, NA)
+	)
+  })
+
 
 ###########################################################################
 ## Output to goodness of fit (Obs vs Reconstr) plot
@@ -685,33 +718,29 @@ gof_df <- reactive({
 ## Output to distribution (Obs vs Reconstr) plot
 ###########################################################################   
 ### create range for density plot
-	density_range <- reactive({
-		l <- density(gof_distr_df()$Flow, na.rm=TRUE)
-		range(l$x)
-	})
-	
- output$gof_distr <-renderPlot({
- 		
+
+output$gof_distr <-renderPlot({
+
+	plot_df <- paleo_ts_temp() %>%
+		select(obs_m3s, recon_m3s) %>%
+		drop_na(obs_m3s, recon_m3s)	%>%
+		rename("Observed" = "obs_m3s") %>%
+		rename("Reconstructed" = "recon_m3s") %>%
+		gather("variable", "flow")	
+
+	l <- density(plot_df$flow, na.rm=TRUE)
+	density_range <- range(l$x)
+
  		### Create the plot
-  		p <- ggplot(gof_distr_df(), aes(x=Flow, fill=Data))
-  		p <- p + geom_density(alpha=0.3)
-  		#p <- p + scale_fill_brewer(name="Data Source", palette="Dark2")
-  		p <- p + scale_fill_manual(name="Data Source", values=c("#d95f02", "#1b9e77"))
-  		p <- p + scale_x_continuous(name=paste0("Streamflow (",flow_units(),")"))
-  		p <- p + scale_y_continuous(name="Density", expand=c(0,0))
-  		p <- p + xlim(density_range())
-  		p <- p + theme_light()
-  		p
+  	p <- ggplot(plot_df, aes(x=flow, fill=variable)) %>%
+		+ geom_density(alpha=0.3) %>%
+  		+ scale_fill_manual(name="Data Source", values=c("#e41a1c", "#377eb8")) %>%
+		+ scale_x_continuous(name=paste0("Flow (",input$flow_units,")")) %>%
+		+ scale_y_continuous(name="Density", expand=c(0,0)) %>%
+		+ xlim(density_range) %>%
+		+ theme_light()
+  	p
    })	
-
-
-
-###########################################################################
-## Output gof to a table
-###########################################################################   
-output$gof_table_simple <-renderTable({
-    gof_table_df()
-  }, digits=3)
 
 
 ###########################################################################

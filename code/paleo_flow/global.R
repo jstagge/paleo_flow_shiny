@@ -32,6 +32,7 @@ require(shinyBS)
 require(digest)
 require(tsbox)
 require(shinycssloaders)
+require(DT)
 
 select <- dplyr::select
 
