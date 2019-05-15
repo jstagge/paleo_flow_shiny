@@ -679,12 +679,12 @@ gof_results <- reactive({
 ## Output to GOF tables
 ###########################################################################
 output$cal_table <-renderTable({
-    data.frame(Metric = c("R^2 (Variance Explained)", "RMSE (Root Mean Sq Error)", "Mean Absolute Error", "Mean Error"), 
+    data.frame(Metric = c("R<sup>2</sup> (Variance Explained)", "RMSE (Root Mean Sq Error)", "Mean Absolute Error", "Mean Error"), 
 			Calculated = c((gof_results()$R)^2, gof_results()$RMSE, gof_results()$MAE, gof_results()$ME), 
 			Reported = rep(NA, 4), 
 			Goal = c(1, 0, 0, 0)
-		)
-  })
+		)	
+  } , sanitize.text.function = function(x) x)
 
 output$val_table<-renderTable({
     data.frame(Metric = c("NSE/RE", "RMSE (Root Mean Sq Error)", "Methods"), 
@@ -692,8 +692,27 @@ output$val_table<-renderTable({
 			Reported = rep(NA, 3), 
 			Goal = c(1, 0, NA)
 	)
-  })
+	
+  } , sanitize.text.function = function(x) x)
 
+### Create a warning for variance explained
+output$rwarn <- renderText({
+		if ((gof_results()$R)^2 < 0.5) {
+			'warn'
+		} else {
+			'nope'
+		}
+})
+outputOptions(output, "rwarn", suspendWhenHidden = FALSE)
+### Create a warning for NSE
+output$nsewarn <- renderText({
+		if (gof_results()$NSE < 0) {
+			'warn'
+		} else {
+			'nope'
+		}
+})
+outputOptions(output, "nsewarn", suspendWhenHidden = FALSE)			
 
 ###########################################################################
 ## Output to goodness of fit (Obs vs Reconstr) plot
@@ -809,7 +828,7 @@ output$gof_distr <-renderPlot({
  #     paste("list_id=",list_id(),"site_info=", site_info())
 #    })
 
-output$text1 <- renderText({ input$extreme_flow })
+output$text1 <- renderText({ output$nsewarn })
 
 output$testing_table <- renderDataTable(paleo_ts_plot())
 #output$testing_table <- renderDataTable(paleo_ts_temp())

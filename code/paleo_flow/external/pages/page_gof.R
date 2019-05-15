@@ -5,6 +5,18 @@
 column(9,
 	column(12,
 	h2("Goodness of Fit"),
+
+			### Add a goodness of fit warning
+			fluidRow(
+			conditionalPanel(
+				condition="output.rwarn == 'warn'",
+				column(6,HTML('<div class="alert alert-warning" role="alert"><h4>Caution: The reconstruction explains less than 50% of the variance in flow (R<sup>2</sup>).</h4><p> While this indicates a relatively poor calibration, it may be acceptable depending on your use case. Carefully consider how you will use the reconstruction and double-check the fit before proceeding.</p></div>')
+			)),
+			conditionalPanel(
+				condition="output.nsewarn == 'warn'",
+				column(6,HTML('<div class="alert alert-warning" role="alert"><h4>Caution: The Nash-Sutcliffe Efficiency (NSE) is less than 0. </h4><p>This means the reconstruction performs worse than if the model had assumed the historical average for all years. While this indicates a relatively poor calibration, it may be acceptable depending on your use case. Carefully consider how you will use the reconstruction and double-check the fit before proceeding.</p></div>'))
+			)
+			),
 			### Add a loading notice
 			#conditionalPanel(
 			#	condition="$('html').hasClass('shiny-busy')",

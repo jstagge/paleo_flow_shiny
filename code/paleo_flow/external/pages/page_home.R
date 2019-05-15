@@ -1,11 +1,21 @@
 column(9,
 	column(12,
+		#textOutput("rwarn"),
+		#textOutput("nsewarn"),
     	fluidRow(h2("Reconstructed Time Series Overview")),
     	conditionalPanel(
 			condition = "input.site_name == ''",
 			fluidRow(
 				column(12, 
 					HTML('<div class="alert alert-warning" role="alert">On the left, please select Annual/Monthly reconstruction and a Site to begin.</div>')
+				)
+			)
+		),
+    	conditionalPanel(
+			condition = "output.rwarn == 'warn' | output.nsewarn == 'warn'",
+			fluidRow(
+				column(12, 
+					HTML('<div class="alert alert-warning" role="alert">There may be fitting issues with this reconstuction, please check the Goodness of Fit tab for details.</div>')
 				)
 			)
 		)
@@ -16,7 +26,7 @@ column(9,
 				dyDownload("tsPlot", "Download Plot", asbutton = TRUE, class="btn-primary btn-sm")
 			)
 		),
-		textOutput("text1"),
+		
 		dataTableOutput("testing_table"),
 		dygraphOutput("tsPlot"),
         br()
