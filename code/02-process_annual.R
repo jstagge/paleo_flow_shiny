@@ -358,6 +358,7 @@ burdekin_obs_mean <- burdekin_obs %>%
 ### Combine obs with recon
 annual_temp <- annual_temp %>%
 	full_join(burdekin_obs_mean, by= "year") %>%
+	mutate(col_name = "burdekin") %>%
 	select(col_name, year, obs_m3s, recon_m3s) %>%
 	arrange(year)
 
@@ -491,6 +492,7 @@ hurunui_obs_annual <- hurunui_obs %>%
 ### Combine obs with recon
 annual_temp <- annual_temp %>%
 	full_join(hurunui_obs_annual, by= "year") %>%
+	mutate(col_name = "hurunui") %>%
 	select(col_name, year, obs_m3s, recon_m3s) %>%
 	arrange(year)
 
@@ -616,11 +618,16 @@ annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
 
 ### Read in Data
 annual_temp <- read_table2(file.path(annual_folder,"missouri2016flow.txt"), skip=163)
+missou_sites <- read_table2(file.path(annual_folder,"missouri2016sites.txt"))
 
 annual_temp <- annual_temp %>%
-	rename("year"  = "YearAD/StationID") %>%
-	gather("col_name","recon_m3s",-year) %>%
-	mutate(col_name = paste0("0", col_name))
+	`colnames<-`(c("year", missou_sites$STAID)) %>%
+	gather("col_name","recon_m3s",-year) 
+
+#annual_temp <- annual_temp %>%
+#	rename("year"  = "YearAD/StationID") %>%
+#	gather("col_name","recon_m3s",-year) %>%
+#	mutate(col_name = paste0("0", col_name))
 
 unique_colnames <- unique(annual_temp$col_name)
 
@@ -643,7 +650,7 @@ if (i == 1) {
 obs_stats <- obs_stats %>%
 	select(site_no, year_nu, mean_va) %>%
 	rename("year" = "year_nu") %>%
-	mutate(col_name = paste0("usgs_", site_no)) %>%
+	mutate(col_name = paste0("usgs_", site_no)) %>%	
 	mutate(obs_m3s = mean_va * ft3_to_m3 ) %>%
 	select(-mean_va) %>%
 	as_tibble()
@@ -651,6 +658,7 @@ obs_stats <- obs_stats %>%
 annual_temp <- annual_temp %>%
 	mutate(col_name = paste0("usgs_", col_name)) %>%
 	full_join(obs_stats, by=c("col_name", "year")) %>%
+	select(col_name, year, obs_m3s, recon_m3s) %>%
 	arrange(col_name, year)
 
 ### Merge data
@@ -659,10 +667,6 @@ rm(annual_temp)
 
 ### Save to RDS file
 saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
-
-
-#### LOOKS LIKE THERE ARE SOME STRANGE PEAKS IN THE MISSOURI RECONSTRUCTION DATA
-#### DOUBLE CHECK THIS
 
 
 ###########################################################################
@@ -705,20 +709,198 @@ saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
 
 
 
+###########################################################################
+## Process TreeFlow txt files
+###########################################################################
+annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
+
+require(readxl)
+
+treeflow_sites <- read_excel(file.path(annual_folder,"treeflow/treeflow_sites.xls"))
+
+for (i in seq(1,dim(treeflow_sites)[1])) {
+
+	file_name <- treeflow_sites$file_name[i]
+	file_loc <- file.path(annual_folder,paste0("treeflow/",file_name,".txt"))
+	col_name <- treeflow_sites$col_name[i]
+	
+	### Read in the header to determine where the == symbol is
+	annual_head <- read_table(file_loc, skip=0, skip_empty_rows=FALSE, col_names = FALSE)
+	### Find the bottom of the header based on == symbol
+	header_sep <- apply(annual_head[,1], 1, function(x) str_detect(x, "=="))
+	header_sep <- min(which(header_sep), na.rm=TRUE)
+
+	### Read in Data
+	annual_i <- read_table2(file_loc, skip=header_sep)
+
+	### Rename columns
+	annual_i <- annual_i %>%
+		mutate(col_name = col_name) %>%	
+		rename(year := !!treeflow_sites$year_col[i]) %>%	
+		rename(Recon := !!treeflow_sites$rec_col[i]) %>%	
+		rename(Observed := !!treeflow_sites$obs_col[i])
+
+	### Remove NAs
+	annual_i <- annual_i %>%
+		mutate(Recon=replace(Recon, Recon == treeflow_sites$na[i], NA)) %>%
+		mutate(Observed=replace(Observed, Observed == treeflow_sites$na[i], NA)) %>%
+		mutate(Recon=replace(Recon, Recon <= -99, NA)) %>%
+		mutate(Observed=replace(Observed, Observed <= -99, NA)) 
+
+	### Convert units
+	if(treeflow_sites$units[i] == "acft"){
+		annual_i <- annual_i %>%	
+			mutate(recon_m3s = Recon * (m3_acft/time_sec)) %>%
+			mutate(obs_m3s = Observed * (m3_acft/time_sec))
+	} else if (treeflow_sites$units[i] == "kaf") {
+		annual_i <- annual_i %>%	
+			mutate(recon_m3s = Recon * (m3_acft/time_sec) * 1000) %>%
+			mutate(obs_m3s = Observed * (m3_acft/time_sec) * 1000)
+	} else if (treeflow_sites$units[i] == "maf") {
+		annual_i <- annual_i %>%	
+			mutate(recon_m3s = Recon * (m3_acft/time_sec) * 1000000) %>%
+			mutate(obs_m3s = Observed * (m3_acft/time_sec) * 1000000)
+	} else if (treeflow_sites$units[i] == "cfs") {
+		annual_i <- annual_i %>%	
+			mutate(recon_m3s = Recon * 0.028316847) %>%
+			mutate(obs_m3s = Observed * 0.028316847)
+	}
+
+	### Cut to only the pertinent columns
+	annual_i <- annual_i %>%	
+		select(col_name, year, obs_m3s, recon_m3s)	
+
+	if (i == 1) {
+		annual_temp <- annual_i
+	} else {
+		annual_temp <- rbind(annual_temp, annual_i)
+	}
+
+	rm(header_sep, annual_head, annual_i)
+}
+
+### Merge data
+annual_ts <- rbind(annual_ts, annual_temp)
+
+rm(annual_temp)
+
+
+### Save to RDS file
+saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
+
+
+###########################################################################
+## Arkansas Canon City Update
+###########################################################################
+annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
+
+annual_temp <- read_excel(file.path(annual_folder,"treeflow/ArkansasCanonCityUpdate.xls"))
+
+### Create data
+annual_temp <- annual_temp %>%
+	mutate(col_name = "arkansascanoncityupdate") %>%
+	rename("recon_m3s" = 'ARKCCrecV2') %>%
+	rename("obs_m3s" = "arkCCv2") %>%
+	rename("year" = 'Water Yr') %>%
+	mutate(recon_m3s = recon_m3s * (m3_acft/time_sec)) %>%
+	mutate(obs_m3s = obs_m3s * (m3_acft/time_sec)) %>%
+	select(col_name, year, obs_m3s, recon_m3s)
+
+### Merge data
+annual_ts <- rbind(annual_ts, annual_temp)
+rm(annual_temp)
+
+### Save to RDS file
+saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
+
+
+###########################################################################
+## Arkansas Salida
+###########################################################################
+annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
+
+annual_temp <- read_excel(file.path(annual_folder,"treeflow/ArkansasSalidaWYflowreconstruction.xls"))
+
+### Create data
+annual_temp <- annual_temp %>%
+	mutate(col_name = "arkansassalida") %>%
+	rename("recon_m3s" = 'arkSALRECN') %>%
+	rename("obs_m3s" = "arkSALgage") %>%
+	rename("year" = 'YEAR') %>%
+	mutate(recon_m3s = recon_m3s * (m3_acft/time_sec)) %>%
+	mutate(obs_m3s = obs_m3s * (m3_acft/time_sec)) %>%
+	select(col_name, year, obs_m3s, recon_m3s)
+
+### Merge data
+annual_ts <- rbind(annual_ts, annual_temp)
+rm(annual_temp)
+
+### Save to RDS file
+saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
+
+
+###########################################################################
+## Columbia dalles
+###########################################################################
+annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
+
+annual_temp <- read_excel(file.path(annual_folder,"treeflow/Littell_etal_2016_ColumbiaRecons.xls"))
+
+### Create data
+annual_temp <- annual_temp %>%
+	mutate(col_name = "dalles_long") %>%
+	rename("recon_m3s" = '1502.fit.rescale') %>%
+	rename("obs_m3s" = "Dalles.Obs") %>%
+	rename("year" = 'YEAR') %>%
+	select(col_name, year, obs_m3s, recon_m3s)
+
+### Merge data
+annual_ts <- rbind(annual_ts, annual_temp)
+rm(annual_temp)
+
+
+annual_temp <- read_excel(file.path(annual_folder,"treeflow/Littell_etal_2016_ColumbiaRecons.xls"))
+
+### Create data
+annual_temp <- annual_temp %>%
+	mutate(col_name = "dalles_short") %>%
+	rename("recon_m3s" = '1637.PCA.fit') %>%
+	rename("obs_m3s" = "Dalles.Obs") %>%
+	rename("year" = 'YEAR') %>%
+	select(col_name, year, obs_m3s, recon_m3s)
+
+### Merge data
+annual_ts <- rbind(annual_ts, annual_temp)
+rm(annual_temp)
+
+### Save to RDS file
+saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
 
 
 
+###########################################################################
+## Columbia dalles
+###########################################################################
+annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
 
+annual_temp <- read_excel(file.path(annual_folder,"treeflow/Otowi Index Supply Reconstruction Update.xls"))
 
+### Create data
+annual_temp <- annual_temp %>%
+	mutate(col_name = "riograndeotowiupdate") %>%
+	rename("recon_m3s" = 'Recon') %>%
+	rename("obs_m3s" = "Obs") %>%
+	rename("year" = 'Year') %>%
+	mutate(recon_m3s = recon_m3s * 1000*(m3_acft/time_sec)) %>%
+	mutate(obs_m3s = obs_m3s * 1000* (m3_acft/time_sec)) %>%
+	select(col_name, year, obs_m3s, recon_m3s)
 
+### Merge data
+annual_ts <- rbind(annual_ts, annual_temp)
+rm(annual_temp)
 
-
-
-
-
-
-
-
+### Save to RDS file
+saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
 
 
 
@@ -741,43 +923,11 @@ plot_df <- annual_temp %>%
 
 
 ###########################################################################
-## Read in treeflow data
-###########################################################################
-### Read in Data
-flow_obs <- read.csv(file.path(output_path_treeflow, "treeflow_obs.csv"))
-flow_recon <- read.csv(file.path(output_path_treeflow, "treeflow_rec.csv"))
-
-### Merge data
-flow_obs_merge <- merge(x=flow_obs_merge, y=flow_obs, by="year", all=TRUE)
-flow_recon_merge <- merge(x=flow_recon_merge, y=flow_recon, by="year", all=TRUE)
-
-
-
-
-###########################################################################
-## List all possible years and re-sort the dataframe
-###########################################################################
-### Create a dataframe of year sequence
-min_years <- min(c(flow_recon_merge$year,flow_obs_merge$year), na.rm=TRUE)
-max_years <- max(c(flow_recon_merge$year,flow_obs_merge$year), na.rm=TRUE)
-all_years <- seq(min_years, max_years)
-all_years <- data.frame(year = all_years)
-
-### Merge back with years and re-sort
-flow_recon_merge <- merge(x=all_years, y=flow_recon_merge, by="year", all.x=TRUE)
-flow_recon_merge <- flow_recon_merge[with(flow_recon_merge, order(year)), ]
-
-### Merge back with years and re-sort
-flow_obs_merge <- merge(x=all_years, y=flow_obs_merge, by="year", all.x=TRUE)
-flow_obs_merge <- flow_obs_merge[with(flow_obs_merge, order(year)), ]
-
-
-###########################################################################
 ## Write to CSV files
 ###########################################################################
 
-write.csv(flow_obs_merge, file.path(write_output_path, "flow_obs.csv"), row.names=FALSE)
-write.csv(flow_recon_merge, file.path(write_output_path, "flow_rec.csv"), row.names=FALSE)
+#write.csv(flow_obs_merge, file.path(write_output_path, "flow_obs.csv"), row.names=FALSE)
+#write.csv(flow_recon_merge, file.path(write_output_path, "flow_rec.csv"), row.names=FALSE)
 
 
 

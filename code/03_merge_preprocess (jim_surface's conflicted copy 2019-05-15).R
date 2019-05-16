@@ -83,47 +83,11 @@ saveRDS(flow_db, file.path(output_path_base,"flow_db.rds"))
 
 
 ###########################################################################
-## Read in site data
+## Combine site data
 ###########################################################################
 site_annual <-read_excel(file.path(shiny_data_path, "sites_annual.xlsx"))
 site_monthly <-read_excel(file.path(shiny_data_path, "sites_monthly.xlsx"))
 
-###########################################################################
-## Read in Missou GOF and add to sites
-###########################################################################
-missou_sites <- read_table2(file.path(data_path, "paleo_flow_annual/missouri2016sites.txt"))
-
-### Select only relevant columns
-missou_sites <- missou_sites %>%
-	mutate(col_name = paste0("usgs_", STAID)) %>%
-	select(col_name, STANAME, LAT_GAGE, LNG_GAGE, adj.r2, RE_median, CE_median)
-
-### Join with sites data
-site_annual <- site_annual %>%
-	left_join(missou_sites, by = c("col_name" = "col_name"))
-
-### Insert lat, lon, and goodness of fit info
-site_annual <- site_annual %>%
-	mutate(lat = case_when(
-		!is.na(STANAME) ~ LAT_GAGE,
-		TRUE  ~ as.numeric(lat))) %>%
-	mutate(lon = case_when(
-		!is.na(STANAME) ~ LNG_GAGE,
-		TRUE  ~ as.numeric(lon))) %>%
-	mutate(reported_cal_r2 = case_when(
-		!is.na(STANAME) ~ adj.r2,
-		TRUE  ~ as.numeric(reported_cal_r2))) %>%
-	mutate(reported_val_re = case_when(
-		!is.na(STANAME) ~ RE_median,
-		TRUE  ~ as.numeric(reported_val_re))) 
-
-### Remove columns
-site_annual <- site_annual %>%
-	select(-STANAME, -LAT_GAGE, -LNG_GAGE, -adj.r2, -RE_median, -CE_median)
-
-###########################################################################
-## Combine site data
-###########################################################################
 ### Modify the annual site table, resort and add an annual column
 site_annual <- site_annual %>%
 	mutate(site_group_split = site_group) %>%
@@ -143,42 +107,10 @@ site_monthly <- site_monthly %>%
 ### Combine to create single lookup table with ids
 site_all <- rbind(site_monthly, site_annual)
 
-saveRDS(site_annual, file.path(shiny_data_path,"site_annual.rds"))
-saveRDS(site_monthly, file.path(shiny_data_path,"site_monthly.rds"))
-
 saveRDS(site_all, file.path(shiny_data_path,"site_all.rds"))
 saveRDS(site_all, file.path(output_path_base,"site_all.rds"))
 
 
 
-###########################################################################
-## Double check for missing column names
-###########################################################################
-yup <- site_annual %>%
-	full_join(select(flow_db, col_name, recon_m3s), by ="col_name") %>%
-	group_by(col_name) %>%
-	summarise(n = sum(recon_m3s > -9999, na.rm=TRUE), n_naflow = sum(is.na(recon_m3s)), n_na_sitename = sum(is.na(site_name)))
 
 
-### 81 places in flow_db with an NA in the col_names
-	
-### 135 sites with no flow	
-yup %>% 
-	filter(n == 0)
-
-missing_flow <- yup %>%
-	filter(n == 0) %>%
-	arrange(col_name) %>%
-	select(col_name) %>%
-	unlist()
-	
-missing_flow
-
-### 6 places with flow but no column name (including NA for column names)
-missing_sitedata <- yup %>%
-	filter(n_na_sitename != 0) %>%
-	arrange(col_name) %>%
-	select(col_name) %>%
-	unlist()
-	
-missing_sitedata
