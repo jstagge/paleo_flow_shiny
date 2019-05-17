@@ -1,8 +1,11 @@
 column(9,
 	column(12,
-		textOutput("valwarn"),
+		#textOutput("valwarn"),
 		#textOutput("nsewarn"),
-    	fluidRow(h2("Reconstructed Time Series Overview")),
+    	#fluidRow(h2("Reconstructed Time Series Overview")),
+		fluidRow(h2(textOutput("head1"), align="center"), 
+			h4(textOutput("head2"), align="center", style = 'font-weight: bold;')
+		),
     	conditionalPanel(
 			condition = "input.site_name == ''",
 			fluidRow(
@@ -15,7 +18,7 @@ column(9,
 			)
 		),
     	conditionalPanel(
-			condition = "output.rwarn == 'warn' | output.nsewarn == 'warn'",
+			condition = "output.rwarn == 'warn' | output.nsewarn == 'warn' | output.valwarn == 'warn'",
 			fluidRow(
 				column(12, 
 					HTML('<div class="alert alert-dismissible alert-warning" role="alert"><button type="button" class="close" data-dismiss="alert">&times;</button>There may be fitting issues with this reconstuction, please check the Goodness of Fit tab for details.</div>')
@@ -30,7 +33,7 @@ column(9,
 			)
 		),
 		
-		dataTableOutput("testing_table"),
+		#dataTableOutput("testing_table"),
 		dygraphOutput("tsPlot"),
         br()
 	),

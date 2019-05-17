@@ -1,11 +1,3 @@
-Add a column for original recon download link
 Add a second button to download the original
 
-Add in all the claimed reconstruction validation information
-
 Use the loading wrapper for figures
-
-Add in warnings for bad gof
-
-
-Check X axis on some of the distribution plots

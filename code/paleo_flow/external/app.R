@@ -441,7 +441,7 @@ output$tsPlot <-  renderDygraph({
 	### If the user selects a site	
 	if(nchar(input$site_name) > 1) {
 
- 		p <- dygraph(paleo_ts_plot(), main = site_info()$site_name)
+ 		p <- dygraph(paleo_ts_plot())
 
 		if(input$time_resolution == "monthly") {	
 			p <- p %>%
@@ -882,7 +882,18 @@ output$gof_error_plot <-renderPlot({
       shinyjs::show("form")
       shinyjs::hide("thankyou_msg")
     })
-    
+
+
+###########################################################################
+## Page header
+###########################################################################   
+output$head1 <- renderText({ site_info()$site_name })
+output$head2 <- renderText({ if (!is.na(site_info()$period)) {
+			site_info()$period}
+	 })
+
+
+
 ###########################################################################
 ## For troubleshooting
 ###########################################################################   
@@ -891,7 +902,8 @@ output$gof_error_plot <-renderPlot({
  #     paste("list_id=",list_id(),"site_info=", site_info())
 #    })
 
-output$text1 <- renderText({ gof_results()$NSE  - reported_gof()$reported_val_re[1] })
+output$text1 <- renderText({ paste0(site_info()$site_name) })
+output$text2 <- renderText({ paste0(site_info()$period) })
 
 output$testing_table <- renderDataTable(gof_results())
 #output$testing_table <- renderDataTable(paleo_ts_temp())
