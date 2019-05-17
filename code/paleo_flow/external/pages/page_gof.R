@@ -14,7 +14,11 @@ column(9,
 			)),
 			conditionalPanel(
 				condition="output.nsewarn == 'warn'",
-				column(6,HTML('<div class="alert alert-warning" role="alert"><h4>Caution: The Nash-Sutcliffe Efficiency (NSE) is less than 0. </h4><p>This means the reconstruction performs worse than if the model had assumed the historical average for all years. While this indicates a relatively poor calibration, it may be acceptable depending on your use case. Carefully consider how you will use the reconstruction and double-check the fit before proceeding.</p></div>'))
+				column(6,HTML('<div class="alert alert-warning" role="alert"><h4>Caution: The calibration Nash-Sutcliffe Efficiency (NSE) is less than 0. </h4><p>This means the reconstruction performs worse than if the model had assumed the historical average for all years. While this indicates a relatively poor calibration, it may be acceptable depending on your use case. Carefully consider how you will use the reconstruction and double-check the fit before proceeding.</p></div>'))
+			),
+			conditionalPanel(
+				condition="output.valwarn == 'warn'",
+				column(6,HTML('<div class="alert alert-warning" role="alert"><h4>Caution: Validation statistics much worse than calibration. </h4><p>There was a large decrease in predictive skill in the validation step, indicating possibility of an over-fit model that could perform poorly outside the calibration period. This may be acceptable depending on your use case. Carefully consider how you will use the reconstruction and double-check the fit before proceeding.</p></div>'))
 			)
 			),
 

@@ -1,6 +1,6 @@
 column(9,
 	column(12,
-		textOutput("text1"),
+		textOutput("valwarn"),
 		#textOutput("nsewarn"),
     	fluidRow(h2("Reconstructed Time Series Overview")),
     	conditionalPanel(

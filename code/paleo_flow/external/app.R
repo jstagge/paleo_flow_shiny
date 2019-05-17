@@ -738,6 +738,20 @@ output$nsewarn <- renderText({
 })
 outputOptions(output, "nsewarn", suspendWhenHidden = FALSE)			
 
+
+### Create a warning for Validation
+output$valwarn <- renderText({ if (reported_gof()$reported_val_re < 0 ) {
+			'warn'
+		} else if (gof_results()$NSE - reported_gof()$reported_val_re[1] > 0.2) {
+			'warn'
+		} else {
+			'nope'
+		}
+})
+outputOptions(output, "valwarn", suspendWhenHidden = FALSE)			
+
+
+
 ###########################################################################
 ## Output to goodness of fit (Obs vs Reconstr) plot
 ###########################################################################   
@@ -877,9 +891,9 @@ output$gof_error_plot <-renderPlot({
  #     paste("list_id=",list_id(),"site_info=", site_info())
 #    })
 
-output$text1 <- renderText({ reported_gof()$val_method[1] })
+output$text1 <- renderText({ gof_results()$NSE  - reported_gof()$reported_val_re[1] })
 
-output$testing_table <- renderDataTable(site_all)
+output$testing_table <- renderDataTable(gof_results())
 #output$testing_table <- renderDataTable(paleo_ts_temp())
   
   
