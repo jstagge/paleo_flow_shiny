@@ -784,6 +784,32 @@ output$gof_distr <-renderPlot({
   	p
    })	
 
+###########################################################################
+## Output to Error plot
+###########################################################################   
+### create range for density plot
+
+output$gof_error_plot <-renderPlot({
+
+	plot_df <- paleo_ts_temp() %>%
+		select(obs_m3s, recon_m3s) %>%
+		drop_na(obs_m3s, recon_m3s)	%>%
+		mutate(Error = recon_m3s - obs_m3s)
+
+	l <- density(plot_df$Error, na.rm=TRUE)
+	density_range <- range(l$x)
+
+ 		### Create the plot
+  	p <- ggplot(plot_df, aes(x=Error)) %>%
+		+ geom_histogram(fill = "#8da0cb", colour="grey30") %>%
+  		+ geom_vline(xintercept = 0, colour="grey40", linetype="longdash", size=1) %>%
+		+ scale_x_continuous(name=paste0("Model Error (",input$flow_units,")"), limit=density_range) %>%
+		+ scale_y_continuous(name="Count", expand=c(0,0)) %>%
+		+ theme_light()
+  	p
+
+   })	
+
 
 ###########################################################################
 ## Submitting reconstructions
