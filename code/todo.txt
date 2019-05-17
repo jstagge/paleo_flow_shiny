@@ -8,3 +8,4 @@ Use the loading wrapper for figures
 Add in warnings for bad gof
 
 
+Check X axis on some of the distribution plots

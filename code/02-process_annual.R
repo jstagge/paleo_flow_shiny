@@ -903,6 +903,38 @@ rm(annual_temp)
 saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
 
 
+###########################################################################
+## Ping River
+###########################################################################
+annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
+
+### Read in Data
+annual_temp_obs <- read_csv(file.path(annual_folder,"Ping/Ping_P1_observed.csv"))
+annual_temp_rec <- read_csv(file.path(annual_folder,"Ping/Ping_P1_reconstruction.csv"))
+
+### Merge obs with recon
+annual_temp <- annual_temp_rec %>%
+	full_join(annual_temp_obs, by = "Water_year") %>%
+	mutate(col_name = "ping") %>%
+	rename("recon_m3s" = 'Q') %>%
+	rename("obs_m3s" = "Q_water_year") %>%
+	rename("year" = 'Water_year') %>%
+	select(col_name, year, obs_m3s, recon_m3s)
+
+### Reconstruction is in million m3 per year
+annual_temp <- annual_temp %>%
+	mutate(recon_m3s = recon_m3s * (1E6/time_sec)) %>%
+	mutate(obs_m3s = obs_m3s * (1E6/time_sec))
+
+### Merge data
+annual_ts <- rbind(annual_ts, annual_temp)
+rm(annual_temp)
+
+### Save to RDS file
+saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
+
+
+
 
 ###########################################################################
 ## Double Check plot

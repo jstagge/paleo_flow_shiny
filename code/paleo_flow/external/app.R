@@ -554,9 +554,8 @@ output$extreme_distr <-renderPlot({
   		p <- ggplot(plot_df, aes(x=recon_m3s)) %>%
   			+ geom_density(fill="#1b9e77", alpha=0.4) %>%
   			+ geom_vline(xintercept = input$extreme_flow, colour="red", linetype="longdash") %>%
-  			+ scale_x_continuous(name=paste0("Streamflow (", input$flow_units,")")) %>%
+  			+ scale_x_continuous(name=paste0("Streamflow (", input$flow_units,")"), limit=density_range) %>%
   			+ scale_y_continuous(name="Density", expand=c(0,0)) %>%
-  			+ xlim(density_range) %>%
   			+ theme_light()
   		p
    })	
@@ -623,9 +622,8 @@ output$period_compar_hist <-renderPlot({
 			+ scale_fill_brewer(name = "Period", type="qual", palette="Dark2") %>%
 			+ scale_colour_brewer(name = "Period", type="qual", palette="Dark2") %>%
   			+ geom_vline(xintercept = input$extreme_flow, colour="grey40", linetype="longdash") %>%
-  			+ scale_x_continuous(name=paste0("Streamflow (", input$flow_units,")")) %>%
+  			+ scale_x_continuous(name=paste0("Streamflow (", input$flow_units,")"), limit=density_range) %>%
   			+ scale_y_continuous(name="Density", expand=c(0,0)) %>%
-  			+ xlim(density_range) %>%
   			+ theme_light()
 })	
 
@@ -754,9 +752,8 @@ output$gof_distr <-renderPlot({
   	p <- ggplot(plot_df, aes(x=flow, fill=variable)) %>%
 		+ geom_density(alpha=0.3) %>%
   		+ scale_fill_manual(name="Data Source", values=c("#e41a1c", "#377eb8")) %>%
-		+ scale_x_continuous(name=paste0("Flow (",input$flow_units,")")) %>%
+		+ scale_x_continuous(name=paste0("Flow (",input$flow_units,")"), limit=density_range) %>%
 		+ scale_y_continuous(name="Density", expand=c(0,0)) %>%
-		+ xlim(density_range) %>%
 		+ theme_light()
   	p
    })	
