@@ -61,6 +61,15 @@ require(tidyverse)
 require(ggplot2) 
 require(readxl)
 
+
+###########################################################################
+## Define constants
+###########################################################################
+### m3 per acre-ft
+m3_acft <- 1233.481837548
+### seconds per year
+time_sec <- 365.25*24*60*60  
+
 ###########################################################################
 ## Combine monthly and annual time series
 ###########################################################################
@@ -142,6 +151,48 @@ site_monthly <- site_monthly %>%
 
 ### Combine to create single lookup table with ids
 site_all <- rbind(site_monthly, site_annual)
+
+
+###########################################################################
+## Convert units for reported GOF
+###########################################################################
+### Split ranges of SEE into columns
+site_all <- site_all %>%
+	separate(reported_cal_see, c("reported_cal_see_min", "reported_cal_see_max"), sep="-", remove=FALSE, convert=TRUE) %>%
+	mutate(reported_cal_see = case_when (reported_cal_see_max > 0 ~ NA_character_ ,
+		TRUE ~ reported_cal_see)) %>%
+	mutate(reported_cal_see = as.numeric(reported_cal_see))
+
+### Split ranges of RMSE into columns
+site_all <- site_all %>%
+	separate(reported_val_rmse, c("reported_val_rmse_min", "reported_val_rmse_max"), sep="-", remove=FALSE, convert=TRUE) %>%
+	mutate(reported_val_rmse = case_when (reported_val_rmse_max > 0 ~ NA_character_ ,
+		TRUE ~ reported_val_rmse)) %>%
+	mutate(reported_val_rmse = as.numeric(reported_val_rmse))
+
+### A function to convert to m3s
+scale_tom3s <- function(x, reported_units, na.rm = FALSE)  (case_when (reported_units == "af" ~ x * (m3_acft/time_sec),
+				reported_units == "kaf" ~ x * 1E3 * (m3_acft/time_sec),
+				reported_units == "maf" ~ x * 1E6 * (m3_acft/time_sec),
+				reported_units == "cfs" ~ x / 35.31467,
+				reported_units == "m3s" ~ x,
+				TRUE ~ x)	)
+
+### Convert all to m3s
+site_all <- site_all %>% 
+	mutate_at(c("reported_cal_see", "reported_cal_see_min", "reported_cal_see_max", "reported_val_rmse", "reported_val_rmse_min", "reported_val_rmse_max"), scale_tom3s, reported_units = site_all$reported_units)
+
+
+
+###########################################################################
+## Recode validation methods
+###########################################################################
+site_all <- site_all %>% 
+	mutate(val_method = recode(val_method, loo = "Leave-One-Out", 'split-sample' = "Split Sample"))
+
+###########################################################################
+## Save annual data to rds file
+###########################################################################
 
 saveRDS(site_annual, file.path(shiny_data_path,"site_annual.rds"))
 saveRDS(site_monthly, file.path(shiny_data_path,"site_monthly.rds"))

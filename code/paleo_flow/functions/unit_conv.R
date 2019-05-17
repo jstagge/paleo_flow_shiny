@@ -15,6 +15,24 @@ unit_conv <- function(x, new_unit, date, temp_resolution){
 			temp_resolution == "monthly" ~ x *  60*60*24*days_in_month(date),
 			TRUE ~ NA_real_
 		)
+	} else {
 		x
-	} 
+	}
 }
+
+
+unit_conv_nodate_annualonly <- function(x, new_unit){
+	if (new_unit == "cfs"){
+		x * 35.31467	### convert m3s to cfs
+	} else if(new_unit == "ac-ft"){
+		### Convert to cfs
+		x <- x * 35.31467
+		### Convert to ac-ft per second
+		x <- x * (1/43560)
+		### Multiply by duration		
+		 x * 60*60*24*365.25
+	} else {
+		x
+	}
+}
+

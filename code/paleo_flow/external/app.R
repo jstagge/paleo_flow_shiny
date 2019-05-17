@@ -673,26 +673,51 @@ gof_results <- reactive({
 
 })
 
+
+###########################################################################
+## Extract Reported GOF
+###########################################################################
+reported_gof <- reactive({
+	reported_gof <- site_info() %>%
+		select(period, adjustment, reported_cal_r2, reported_cal_see, reported_cal_see_min, reported_cal_see_max, reported_val_re, reported_val_rmse, reported_val_rmse_min, reported_val_rmse_max, reported_val_press, reported_units, val_method, notes) 
+
+### Convert to units
+	reported_gof <- reported_gof %>%
+		mutate_at(c("reported_cal_see", "reported_cal_see_min", "reported_cal_see_max", "reported_val_rmse", "reported_val_rmse_min", "reported_val_rmse_max"),  unit_conv_nodate_annualonly, new_unit=input$flow_units)
+
+reported_gof
+})
+
+
 ###########################################################################
 ## Output to GOF tables
 ###########################################################################
 output$cal_table <-renderTable({
-    data.frame(Metric = c("R<sup>2</sup> (Variance Explained)", "RMSE (Root Mean Sq Error)", "Mean Absolute Error", "Mean Error"), 
-			Calculated = c((gof_results()$R)^2, gof_results()$RMSE, gof_results()$MAE, gof_results()$ME), 
-			Reported = rep(NA, 4), 
-			Goal = c(1, 0, 0, 0)
+    cal_table <- data.frame(Metric = c("R<sup>2</sup> (Var Explained)", "NSE (CE)", "RMSE", "Mean Absolute Error", "Mean Error", ""), 
+			Calculated = c((gof_results()$R)^2, gof_results()$NSE, gof_results()$RMSE, gof_results()$MAE, gof_results()$ME, NA), 
+			Reported = c(reported_gof()$reported_cal_r2[1], NA, reported_gof()$reported_cal_see[1], rep(NA, 2), NA), 
+			Goal = c(1, 1, 0, 0, 0, "")
 		)	
-  } , sanitize.text.function = function(x) x)
+
+	cal_table %>% 
+		mutate_at(c("Calculated", "Reported"), signif, 4)
+
+  } , sanitize.text.function = function(x) x, , striped=TRUE)
 
 output$val_table<-renderTable({
-    data.frame(Metric = c("NSE/RE", "RMSE (Root Mean Sq Error)", "Methods"), 
-			Calculated = c(gof_results()$NSE, NA, NA), 
-			Reported = rep(NA, 3), 
-			Goal = c(1, 0, NA)
+
+	val_table <- data.frame(Metric = c("", "NSE (RE)", "RMSE", "","", "Method"), 
+			Reported = c(NA,signif(reported_gof()$reported_val_re[1],4), signif(reported_gof()$reported_val_rmse[1],4), NA,NA,reported_gof()$val_method[1]), 
+			Goal = c("", 1, 0, rep("",2), "")
 	)
 	
-  } , sanitize.text.function = function(x) x)
+  } , sanitize.text.function = function(x) x, striped=TRUE)
 
+
+
+###########################################################################
+## Create GOF warnings
+###########################################################################
 ### Create a warning for variance explained
 output$rwarn <- renderText({
 		if ((gof_results()$R)^2 < 0.5) {
@@ -702,6 +727,7 @@ output$rwarn <- renderText({
 		}
 })
 outputOptions(output, "rwarn", suspendWhenHidden = FALSE)
+
 ### Create a warning for NSE
 output$nsewarn <- renderText({
 		if (gof_results()$NSE < 0) {
@@ -825,9 +851,9 @@ output$gof_distr <-renderPlot({
  #     paste("list_id=",list_id(),"site_info=", site_info())
 #    })
 
-output$text1 <- renderText({ output$nsewarn })
+output$text1 <- renderText({ reported_gof()$val_method[1] })
 
-output$testing_table <- renderDataTable(paleo_ts_plot())
+output$testing_table <- renderDataTable(site_all)
 #output$testing_table <- renderDataTable(paleo_ts_temp())
   
   
