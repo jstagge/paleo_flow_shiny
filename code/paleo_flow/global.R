@@ -22,7 +22,6 @@ require(xts)
 #library(googleCharts)
 library(MASS)
 library(scales)
-library(shinythemes)
 library(png)
 require(shiny)
 require(leaflet)
@@ -89,7 +88,8 @@ appCSS <-
 ## Read in email login	
 ###########################################################################
 ### Create a new password in linux
-login_pw  <- decrypt_gk_pw("user jhstagge domain ditigalocean")
+#login_pw  <- decrypt_gk_pw("user jhstagge domain ditigalocean")
+login_pw <- scan("/home/pass.txt", character(), quote = "")
 
 
 

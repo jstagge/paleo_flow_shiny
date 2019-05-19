@@ -59,10 +59,10 @@ shinyUI(navbarPageWithText(
 			condition = "input.nav_value == 'gof'",
 			source("external/pages/page_gof.R",local=T)$value
 		),
-		conditionalPanel(
-			condition = "input.nav_value == 'background'",
-			source("external/pages/page_background.R",local=T)$value
-		),		
+#		conditionalPanel(
+#			condition = "input.nav_value == 'background'",
+#			source("external/pages/page_background.R",local=T)$value
+#		),		
 		conditionalPanel(
 			condition = "input.nav_value == 'submit'",
 			source("external/pages/page_submit.R",local=T)$value
