@@ -95,6 +95,9 @@ m3_acft <- 1233.481837548
 ### seconds per year
 time_sec <- 365.25*24*60*60  
 
+### m3 in one ft3
+ft3_to_m3 <- 0.0283168466
+
 ###########################################################################
 ## Set Initial Values to Process Justin's Files
 ###########################################################################
@@ -731,7 +734,7 @@ for (i in seq(1,dim(treeflow_sites)[1])) {
 	header_sep <- min(which(header_sep), na.rm=TRUE)
 
 	### Read in Data
-	annual_i <- read_table2(file_loc, skip=header_sep)
+	annual_i <- read_table2(file_loc, skip=header_sep, guess_max = 2500)
 
 	### Rename columns
 	annual_i <- annual_i %>%
