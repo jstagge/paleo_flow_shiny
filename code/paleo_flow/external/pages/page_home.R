@@ -18,7 +18,7 @@ column(9,
 			)
 		),
     	conditionalPanel(
-			condition = "output.rwarn == 'warn' | output.nsewarn == 'warn' | output.valwarn == 'warn'",
+			condition = "output.rwarn == 'warn' | output.nsewarn == 'warn' | output.valwarn == 'warn' | output.instwarn == 'warn'",
 			fluidRow(
 				column(12, 
 					HTML('<div class="alert alert-dismissible alert-warning" role="alert"><button type="button" class="close" data-dismiss="alert">&times;</button>There may be fitting issues with this reconstuction, please check the Goodness of Fit tab for details.</div>')
@@ -56,8 +56,9 @@ column(9,
             ### Text information          
 			p(htmlOutput("recon_name_text")),
 			p(htmlOutput("recon_author_text")),
-			p(htmlOutput("recon_link_text")),
-			p(tags$strong("Recommended Citation:"), textOutput("recon_citation_text"))
+			p(tags$strong("Recommended Citation:"), textOutput("recon_citation_text")),
+			p(htmlOutput("pub_link_text")),
+			p(htmlOutput("recon_link_text"))
 		),
 		column(6,
 			h3("Observation Source"),
@@ -66,7 +67,9 @@ column(9,
 			p(htmlOutput("base_author_text")),
 			p(htmlOutput("base_link_text"))
 		)
-	) 	
+	) ,
+	fluidRow(HTML('<p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p>'))
+
 )
 
 

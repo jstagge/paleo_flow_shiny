@@ -177,7 +177,10 @@ month_obs <- month_obs %>%
 
 month_recon <- month_recon %>%
 	select(month, year, flow_rec_m3s) %>%
-	rename(recon_m3s = flow_rec_m3s)
+	rename(recon_m3s = flow_rec_m3s) %>%
+	drop_na(recon_m3s) %>%
+	complete(year, month, fill = list(recon_m3s = NA)) %>%
+	arrange(year, month)
 
 if (site_id == "10109001"){
 	annual_recon <- annual_recon %>% mutate(annual_m3s = flow.rec.region.m3s)
@@ -187,15 +190,31 @@ if (site_id == "10109001"){
 	annual_recon <- annual_recon %>% mutate(annual_m3s = flow.rec.m3s)
 }
 
+
+
+annual_dates <- expand.grid(month=seq(1,12), water_year = seq(min(annual_recon$water_year, na.rm=TRUE)-2, max(annual_recon$water_year,na.rm=TRUE)+2))
+
+annual_dates <- annual_dates %>% 
+	mutate(year = usgs_wateryear_inverse(water_year, month = month)) %>%
+	expand(year, month) %>%
+	arrange(year, month) %>%
+	mutate(water_year = usgs_wateryear(year, month))
+
 annual_recon <- annual_recon  %>%
-	select(water_year, annual_m3s)
+	right_join(annual_dates, by = "water_year") %>%
+	select(month, year, water_year, annual_m3s) %>%
+	drop_na(annual_m3s)
+
+
 
 ###########################
 ###  Create a merged ts object
 ########################
+
+
 monthly_temp <- month_obs %>%
 	full_join(month_recon, by=c("year" = "year", "month" = "month")) %>%
-	full_join(annual_recon, by="water_year") 
+	full_join(annual_recon, by=c("year" = "year", "month" = "month"))
 
 monthly_temp$col_name <- col_name 
 

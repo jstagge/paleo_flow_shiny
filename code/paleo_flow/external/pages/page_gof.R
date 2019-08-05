@@ -19,6 +19,10 @@ column(9,
 			conditionalPanel(
 				condition="output.valwarn == 'warn'",
 				column(6,HTML('<div class="alert alert-warning" role="alert"><h4>Caution: Validation statistics much worse than calibration. </h4><p>There was a large decrease in predictive skill in the validation step, indicating possibility of an over-fit model that could perform poorly outside the calibration period. This may be acceptable depending on your use case. Carefully consider how you will use the reconstruction and double-check the fit before proceeding.</p></div>'))
+			),
+			conditionalPanel(
+				condition="output.instwarn == 'warn'",
+				column(6,HTML('<div class="alert alert-warning" role="alert"><h4>Caution: No instrumental data. </h4><p>Fit could not be confirmed because instrumental data was not available or submitted. We recommend contacting the original authors to understand reconstruction skill before proceeding.</p></div>'))
 			)
 			),
 
@@ -53,9 +57,10 @@ br(),
 				)	,
 				column(3,
 					br(),
-					bsCollapse(id = "collapse_var", open = "RMSE (Root Mean Squared Error)",
+					bsCollapse(id = "collapse_var", open = "R^2 (Variance Explained)",
                  		bsCollapsePanel("R^2 (Variance Explained)", "R-squared describes how much of the observed variance in reconstructed flow is accounted for by the predictors (tree-rings).", br(), br(), "It represents percent explained (%) and ranges from zero to one, with one being a perfect fit." , br(), br(), HTML('<a href="https://www.nap.edu/read/11676/chapter/12#92">Reconstruction-Statistical Background</a>'), style = "primary"), 
-                 		bsCollapsePanel("NSE (Nash-Sutcliffe Efficiency)", "Nash-Sutcliffe Efficiency measures a model's predictive ability against the long term mean. NSE ranges from 1 (perfect fit) to -∞. Values greater than zero indicate that the model has some skill (performs better than assuming the mean).", br(), br(), "Within the reconstruction community, this metric is typically referred to as the Coefficient of Efficiency (CE) when applied to calibration and Reduction of Error (RE) when applied to validation.", br(), br(), HTML('<a href="https://www.adv-geosci.net/5/89/2005/adgeo-5-89-2005.pdf">Efficiency Criteria</a>'), style = "primary"),
+                 		bsCollapsePanel("RE (NSE)", "Reduction of Error (RE) measures a model's predictive skill compared to assuming the long term mean. RE is used for the calibration and is mathematically identical to the Nash-Sutcliffe Efficiency (NSE) commonly used by hydrologists.", br(), br(), "RE ranges from 1 (perfect fit) to -∞. Values greater than zero indicate that the model has some skill (performs better than assuming the mean).", br(), br(), HTML('<a href="https://www.adv-geosci.net/5/89/2005/adgeo-5-89-2005.pdf">Efficiency Criteria</a>'), style = "primary"),
+                 		bsCollapsePanel("CE (NSE)", "Coefficient of Efficiency (CE) is equivalent to the Reduction of Error (RE), but applied to validation data.", br(), br(), "CE therefore ranges from 1 (perfect skill) to -∞. Values greater than zero indicate that the model has some skill (performs better than assuming the mean).", br(), br(), "Because CE measures skill for the hold-out set, we expect that CE < RE. However, this drop in skill should not be too large, or it points to over-fitting.", br(), br(), HTML('<a href="https://www.adv-geosci.net/5/89/2005/adgeo-5-89-2005.pdf">Efficiency Criteria</a>'), style = "primary"),
 						bsCollapsePanel("RMSE (Root Mean Squared Error)", "RMSE provides the 'typical' error and is an absolute measure of fit, meaning it is displayed in flow units.", br(), br(), "RMSE is calculated as the square root of mean square of errors (predicted minus observed flow). A perfect model would have no errors, and therefore RMSE = 0.", br(), br(), HTML('<a href="https://www.nap.edu/read/11676/chapter/12#92">Reconstruction-Statistical Background</a>'), style = "primary"), 
                 		bsCollapsePanel("Mean Absolute Error", "Mean Absolute Error (MAE) calculates the average absolute (no sign) difference between predicted and observed flows. It is displayed in original flow units and a perfect fit have MAE = 0.", br(), br(), "MAE is similar in interpretation to RMSE and is the more intuitive of the two. Where RMSE handles negative values by squaring them, MAE simply applies the absolute value ||.", style = "primary"), 
                  		bsCollapsePanel("Mean Error", "Mean Error (ME) calculates the average error (predicted - observed). It is a measure of bias, if the model consistently over-predicts or under-predicts. Unbiased models have a ME near zero.", br(), br(), "Mean Error should always be considered with other metrics because poor predictive models can have ME near zero if large positive and negative errors can cancel each other out.", style = "primary"), 
@@ -66,9 +71,9 @@ br(),
 
 
         	h3("Comparison of Flow Distributions"),
-        	plotOutput("gof_distr"),
+        	plotOutput("gof_distr") #,
 
-       		h3("Distribution of errors"),
-        	plotOutput("gof_error_plot")  
+       		#h3("Distribution of errors"),
+        	#plotOutput("gof_error_plot")  
 	)
 )

@@ -246,7 +246,12 @@ saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
 annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
 
 ### Read in Data
-annual_temp <- read_delim(file.path(annual_folder,"Mongolia/yeruu2012flow.txt"), delim="\t", skip=93, na="-9999")
+annual_temp <- read_delim(file.path(annual_folder,"Mongolia/yeruu2012flow.txt"), delim="\t", skip=93, na="-9999", col_types = cols(
+	age_AD =  col_double(),
+	samples =  col_double(),
+	.default =  col_double()
+	)
+)
 
 ### Create data
 annual_temp <- annual_temp %>%
@@ -516,27 +521,27 @@ saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
 ###########################################################################
 ## Process Potomac
 ###########################################################################
-annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
+#annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
 
 ### Read in Data
-annual_temp <- read_table(file.path(annual_folder,"Potomac/potomac2011flow.txt"), skip=102)
+#annual_temp <- read_table2(file.path(annual_folder,"Potomac/potomac2011flow.txt"), skip=102)
 
 ### Create data
-annual_temp <- annual_temp %>%
-	mutate(col_name = "potomac2011") %>%
-	rename("recon_m3s" = 'Recon MJJInst.') %>%
-	rename("obs_m3s" = 'Mean MJJAS') %>%
-	rename("year" = 'Year') %>%
-	select(col_name, year, obs_m3s, recon_m3s)
+#annual_temp <- annual_temp %>%
+#	mutate(col_name = "potomac2011") %>%
+#	rename("recon_m3s" = 'recon_m3s') %>%
+#	rename("obs_m3s" = 'obs_m3s') %>%
+#	rename("year" = 'Year') %>%
+#	select(col_name, year, obs_m3s, recon_m3s)
 
 ### Merge data
-annual_ts <- rbind(annual_ts, annual_temp)
+#annual_ts <- rbind(annual_ts, annual_temp)
 
-rm(annual_temp)
+#rm(annual_temp)
 
 
 ### Save to RDS file
-saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
+#saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
 
 
 ###########################################################################
@@ -599,11 +604,14 @@ annual_temp <- read_table2(file.path(annual_folder,"Yellowstone/yellowstone_flow
 ### Create data
 annual_temp <- annual_temp %>%
 	mutate(col_name = "yellowstone") %>%
-	rename("recon_m3s" = 'C2') %>%
+	rename("recon_m3s" = 'C1') %>%
 	rename("obs_m3s" = "C6") %>%
 	rename("year" = 'Year') %>%
 	mutate(recon_m3s = (recon_m3s * 1E9)/time_sec) %>%
+	mutate(obs_m3s = (obs_m3s * 1E9)/time_sec) %>%
 	select(col_name, year, obs_m3s, recon_m3s)
+
+ggplot(annual_temp, aes(x=year)) + geom_line(aes(y=recon_m3s))+ geom_line(aes(y=obs_m3s), colour="red")
 
 ### Merge data
 annual_ts <- rbind(annual_ts, annual_temp)
@@ -664,44 +672,9 @@ annual_temp <- annual_temp %>%
 	select(col_name, year, obs_m3s, recon_m3s) %>%
 	arrange(col_name, year)
 
-### Merge data
-annual_ts <- rbind(annual_ts, annual_temp)
-rm(annual_temp)
+yup <- annual_temp %>%
+	filter(col_name == "usgs_06846500")
 
-### Save to RDS file
-saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
-
-
-###########################################################################
-## Process Snake River
-###########################################################################
-annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
-
-### Read in Data
-annual_temp <- read_table2(file.path(annual_folder,"snake-flow2010.txt"), skip=96)
-
-recon_temp <- annual_temp %>%
-	rename("year" = 'Year') %>%
-	select(year, JCK_recon, PALI_recon, HEII_recon) %>%
-	rename("snake_jck" = 'JCK_recon', "snake_pali" = 'PALI_recon', "snake_heii" = 'HEII_recon')
-
-recon_temp <- recon_temp %>%
-	gather("col_name", "recon_acft", -year)
-
-obs_temp <- annual_temp %>%
-	rename("year" = 'Year') %>%
-	select(year, JCK_inst, PALI_inst, HEII_inst) %>%
-	rename("snake_jck" = 'JCK_inst', "snake_pali" = 'PALI_inst', "snake_heii" = 'HEII_inst')
-
-obs_temp <- obs_temp %>%
-	gather("col_name", "obs_acft", -year)
-
-annual_temp <- recon_temp %>%
-	full_join(obs_temp, by=c("year", "col_name")) %>%
-	arrange(col_name, year) %>%
-	mutate( obs_m3s = (obs_acft * m3_acft)/time_sec) %>%
-	mutate( recon_m3s = (recon_acft * m3_acft)/time_sec) %>%
-	select(col_name, year, obs_m3s, recon_m3s)
 
 ### Merge data
 annual_ts <- rbind(annual_ts, annual_temp)
@@ -709,7 +682,6 @@ rm(annual_temp)
 
 ### Save to RDS file
 saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
-
 
 
 ###########################################################################
@@ -882,7 +854,7 @@ saveRDS(annual_ts, file.path(write_output_path,"annual_ts.rds"))
 
 
 ###########################################################################
-## Columbia dalles
+## Rio Grande Otowi
 ###########################################################################
 annual_ts <- readRDS(file.path(write_output_path,"annual_ts.rds"))
 
@@ -955,6 +927,9 @@ ggplot(plot_df , aes(x=year, y=flow_m3s, colour=var)) + geom_line() + theme_clas
 plot_df <- annual_temp %>%
 	gather("var", "flow_m3s", -year, -col_name) 
 
+annual_temp %>%
+	gather("var", "flow_m3s", -year, -col_name) %>%
+	ggplot( aes(x=year, y=flow_m3s, colour=var)) + geom_line() + theme_classic() + facet_wrap(. ~ col_name, scales="free_y")
 
 
 ###########################################################################

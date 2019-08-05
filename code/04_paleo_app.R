@@ -98,7 +98,7 @@ runApp("paleo_flow")
 
 
 ###########################################################################
-##  Publish to Shiny website
+##  Publish to Shiny website/
 ###########################################################################
 ##rsconnect::deployApp("paleo_flow")
 

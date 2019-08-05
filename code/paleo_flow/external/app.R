@@ -19,7 +19,7 @@ observe({
 	      return()
 		### If time resolution is monthly
 		if(input$time_resolution=='monthly'){
-			selectizeInput("site_name", 'Site Location',
+			selectizeInput("site_name", 'Flow Gauge',
 	        	choices = create_site_list(site_all, res="monthly"),
 	   			selected = NULL,
 	   			multiple = FALSE,
@@ -28,7 +28,7 @@ observe({
 	   		)	
 		### If time resolution is annual
 		} else {
-			selectizeInput("site_name", 'Site Location',
+			selectizeInput("site_name", 'Flow Gauge',
 	 	       choices = create_site_list(site_all, res="annual"),
 	    		selected = NULL,
 	   			multiple = FALSE,
@@ -83,7 +83,9 @@ output$recon_name_text <- renderUI({ HTML(paste0("<strong>Name</strong> :   ",si
 
 output$recon_author_text <- renderUI({ HTML(paste0("<strong>Author/Originator(s)</strong> :   ",site_info()$recon_originator)) })
 
-output$recon_link_text <- renderUI({ HTML(paste0('<strong>Source Link </strong> :   <a href="',site_info()$recon_link, '">',site_info()$recon_link,'</a>')) })
+output$recon_link_text <- renderUI({ HTML(paste0('<strong>Source Link </strong> :   <a href="',site_info()$recon_link, '" target="_blank">',site_info()$recon_link,'</a>')) })
+
+output$pub_link_text <- renderUI({ HTML(paste0('<strong>Publication Link </strong> :   <a href="',site_info()$pub_link, '" target="_blank">',site_info()$pub_link,'</a>')) })
 
 output$recon_citation_text <- renderText({site_info()$recon_citation})
 
@@ -92,7 +94,7 @@ output$base_name_text <- renderUI({ HTML(paste0("<strong>Name</strong> :   ",sit
 
 output$base_author_text <- renderUI({ HTML(paste0("<strong>Author/Originator(s)</strong> :   ",site_info()$base_originator)) })
 
-output$base_link_text <- renderUI({ HTML(paste0('<strong>Source Link </strong> :   <a href="',site_info()$base_link, '">',site_info()$base_link,'</a>')) })
+output$base_link_text <- renderUI({ HTML(paste0('<strong>Source Link </strong> :   <a href="',site_info()$base_link, '" target="_blank">',site_info()$base_link,'</a>')) })
 
 
 ###########################################################################
@@ -112,14 +114,15 @@ paleo_ts_temp <- reactive({
 	### Perform unit conversion
 	if(input$flow_units != "m3/s"){
 		paleo_ts_temp <- paleo_ts_temp %>%
-			mutate_at(c("annual_m3s", "obs_m3s", "recon_m3s"),  unit_conv, new_unit=input$flow_units, date=.$date, temp_resolution=.$resolution) ### Add in the unit scaling
+			mutate_at(c("annual_m3s", "obs_m3s", "recon_m3s"),  unit_conv, new_unit=input$flow_units, date=.$date, temp_resolution=.$resolution, begin_month=site_info()$begin_month, end_month=site_info()$end_month) ### Add in the unit scaling
 	}
 
 	### Create complete time series and sort by date
 	if (input$time_resolution == "annual"){	
 		paleo_ts_temp <- paleo_ts_temp %>%
 			complete(date = seq.Date(min(date, na.rm=TRUE), max(date, na.rm=TRUE), by="year")) %>%
-			arrange(date)
+			arrange(date) %>%
+			select(-month)
 	} else if (input$time_resolution == "monthly"){
 		### Subset to months
 		if(input$time_subset == 0){
@@ -139,6 +142,9 @@ paleo_ts_temp <- reactive({
 	paleo_ts_temp %>%
 		as.data.frame()
 })
+
+
+
 
 
 ### In the bear monthly, there are a bunch of NA dates with annual flow - check this
@@ -250,9 +256,8 @@ output$extreme_flow <- renderUI({
 ## Calculate extreme output
 ###########################################################################
 extreme_table <- reactive({ 
-	
-	extreme_table <- paleo_ts_temp() %>%
-		select(date, year, month, obs_m3s, recon_m3s)
+
+	extreme_table <- paleo_ts_temp()
 
 	if(input$extreme_direction == "gt") {	
 		extreme_table <- extreme_table %>%
@@ -271,13 +276,15 @@ extreme_table <- reactive({
 
 	if(input$time_resolution == "monthly") {	
 		extreme_table <- extreme_table %>%
+			select(date, year, month, obs_m3s, recon_m3s) %>%
 			mutate(date = format(date, "%b %Y")) %>%
 			rename("Year" = "year")  %>%
 			rename("Month" = "month")  %>%
 			rename("Date" = "date") 
 	} else {
 		extreme_table <- extreme_table %>%
-			select(-date, -month) %>%
+			#select(-date, -month) %>%
+			select(year, obs_m3s, recon_m3s) %>%
 			rename("Year" = "year")
 	}
 #paste0("Reconstructed" , input$flow_units)
@@ -450,12 +457,60 @@ period_compar_dist_df <- reactive({
 ###########################################################################
 ## Prepare Output for download
 ###########################################################################
+
+paleo_ts_download <- reactive({
+
+	if (input$time_resolution == "annual"){	
+		paleo_ts_temp() %>%
+			rename(flow_gauge = col_name) %>%
+			rename(instrumental = obs_m3s) %>%
+			rename(reconstructed = recon_m3s) %>%
+			mutate(units = input$flow_units) %>%
+			select(year, instrumental, reconstructed, units, flow_gauge)
+	} else if (input$time_resolution == "monthly"){	
+		paleo_ts_temp() %>%
+			rename(flow_gauge = col_name) %>%
+			rename(instrumental = obs_m3s) %>%
+			rename(reconstructed = recon_m3s) %>%
+			rename(annual_recon = annual_m3s) %>%
+			mutate(units = input$flow_units) %>%
+			select(year, month, instrumental, reconstructed, annual_recon, units, flow_gauge)
+	}
+
+})
+
+
  output$downloadData <- downloadHandler(
     filename = function() { paste(site_info()$col_name, '_',input$flow_units,'.csv', sep='') },
     content = function(file) {
-      write.csv(paleo_ts_temp(), file)
+		header <- paste0("Reconstruction Name: ", site_info()$recon_name, 
+			"\n",
+			"\nAuthor / Originator : ", site_info()$recon_originator, 
+			"\nRecommended Citation : ", site_info()$recon_citation, 
+			"\nPublication Link : ", site_info()$pub_link, 
+			"\nSource Link : ", site_info()$recon_link, 
+			"\n",
+			"\nReconstruction Period: ", site_info()$period,
+			"\nFlow Adjustment: ", site_info()$adjustment,
+			"\n",
+			"\nInstrumental Record : ", site_info()$base_name, 
+			"\nInstrumental Originator : ", site_info()$base_originator, 
+			"\nInstrumental Link : ", site_info()$base_link, 
+			"\n",
+			"\nPlease always cite the original reconstruction source to credit the original authors.",
+			"\n\n",
+			"####")
+		cat(header, '\n',  file = file)
+		write.table(paleo_ts_download(), file, append = T, sep=',', row.names = FALSE) #
+#		write.csv(paleo_ts_download(), file, row.names=FALSE)
     }
   )
+
+
+
+#cat(header, '\n',  file = file)
+#write.table(x, file, append = T, sep=',', row.names = FALSE)
+
 
 ###########################################################################
 ## Output to time series plot
@@ -505,7 +560,7 @@ output$tsPlot <-  renderDygraph({
 	 	dyRangeSelector() %>% 
   		dyUnzoom() %>% 
 		dyCrosshair(direction = "vertical") %>%
- 		dyOptions(axisLineWidth = 1.5, drawGrid = FALSE, titleHeight= 28, animatedZooms = TRUE) %>%
+ 		dyOptions(axisLineWidth = 1.5, drawGrid = FALSE, titleHeight= 28, animatedZooms = TRUE, fillGraph = FALSE) %>%
 		dyHighlight(highlightSeriesOpts = list(strokeWidth = 0.9), highlightSeriesBackgroundAlpha = 0.9, hideOnMouseOut = TRUE) %>%
   		dyLegend(show = "always", hideOnMouseOut = FALSE, labelsSeparateLines=TRUE) %>%
     	dyAxis(name="x",axisLabelFormatter = "function(d){ return d.getFullYear() }"  ) %>%
@@ -703,11 +758,12 @@ gof_results <- reactive({
 ###########################################################################
 reported_gof <- reactive({
 	reported_gof <- site_info() %>%
-		select(period, adjustment, reported_cal_r2, reported_cal_see, reported_cal_see_min, reported_cal_see_max, reported_val_re, reported_val_rmse, reported_val_rmse_min, reported_val_rmse_max, reported_val_press, reported_units, val_method, notes) 
+		select(period, adjustment, reported_cal_r2, reported_cal_see, reported_cal_see_min, reported_cal_see_max, reported_val_ce, reported_val_rmse, reported_val_rmse_min, reported_val_rmse_max, reported_val_press, reported_units, val_method, notes) 
 
 ### Convert to units
 	reported_gof <- reported_gof %>%
-		mutate_at(c("reported_cal_see", "reported_cal_see_min", "reported_cal_see_max", "reported_val_rmse", "reported_val_rmse_min", "reported_val_rmse_max"),  unit_conv_nodate_annualonly, new_unit=input$flow_units)
+#		mutate_at(c("reported_cal_see", "reported_cal_see_min", "reported_cal_see_max", "reported_val_rmse", "reported_val_rmse_min", "reported_val_rmse_max"),  unit_conv_nodate_annualonly, new_unit=input$flow_units)
+		mutate_at(c("reported_cal_see", "reported_cal_see_min", "reported_cal_see_max", "reported_val_rmse", "reported_val_rmse_min", "reported_val_rmse_max"),  unit_conv_nodate, new_unit=input$flow_units, temp_resolution=site_info()$resolution, begin_month=site_info()$begin_month, end_month=site_info()$end_month)
 
 reported_gof
 })
@@ -716,26 +772,40 @@ reported_gof
 ###########################################################################
 ## Output to GOF tables
 ###########################################################################
+#output$cal_table <-renderTable({ reported_gof()  } , sanitize.text.function = function(x) x, , striped=TRUE, , spacing = "m", na = "")
+
 output$cal_table <-renderTable({
-    cal_table <- data.frame(Metric = c("R<sup>2</sup> (Var Explained)", "NSE (CE)", "RMSE", "Mean Absolute Error", "Mean Error", ""), 
+	reported_col <- c(reported_gof()$reported_cal_r2[1],NA, signif(reported_gof()$reported_cal_see[1], 4), rep(NA, 2), NA) #rep(NA, 2)
+	### Catch if there is a range	
+	if(!is.na(reported_gof()$reported_cal_see_max[1]) ){   
+		reported_col[3] <- paste0(as.character(signif(reported_gof()$reported_cal_see_min[1], 4)), " - ", as.character(signif(reported_gof()$reported_cal_see_max[1], 4)))
+	}
+
+    cal_table <- data.frame(Metric = c("R<sup>2</sup> (Var Explained)", "RE (NSE)", "RMSE", "Mean Absolute Error", "Mean Error", "&nbsp;"), 
 			Calculated = c((gof_results()$R)^2, gof_results()$NSE, gof_results()$RMSE, gof_results()$MAE, gof_results()$ME, NA), 
-			Reported = c(reported_gof()$reported_cal_r2[1], NA, reported_gof()$reported_cal_see[1], rep(NA, 2), NA), 
+			Reported = reported_col,
 			Goal = c(1, 1, 0, 0, 0, "")
 		)	
 
+	#cal_table
 	cal_table %>% 
-		mutate_at(c("Calculated", "Reported"), signif, 4)
+		mutate_at("Calculated", signif, 4)
 
-  } , sanitize.text.function = function(x) x, , striped=TRUE)
+ } , sanitize.text.function = function(x) x, , striped=TRUE, , spacing = "m", na = "")
 
 output$val_table<-renderTable({
+	reported_col <- c(NA,signif(reported_gof()$reported_val_ce[1],4), signif(reported_gof()$reported_val_rmse[1],4), NA,NA,reported_gof()$val_method[1])
+	### Catch if there is a range	
+	if(!is.na(reported_gof()$reported_val_rmse_max[1]) ){   
+		reported_col[3] <- paste0(as.character(signif(reported_gof()$reported_val_rmse_min[1], 4)), " - ", as.character(signif(reported_gof()$reported_val_rmse_max[1], 4)))
+	}
 
-	val_table <- data.frame(Metric = c("", "NSE (RE)", "RMSE", "","", "Method"), 
-			Reported = c(NA,signif(reported_gof()$reported_val_re[1],4), signif(reported_gof()$reported_val_rmse[1],4), NA,NA,reported_gof()$val_method[1]), 
+	val_table <- data.frame(Metric = c("&nbsp;", "CE (NSE)", "RMSE", "&nbsp;","&nbsp;", "Method"), 
+			Reported = reported_col, 
 			Goal = c("", 1, 0, rep("",2), "")
 	)
 	
-  } , sanitize.text.function = function(x) x, striped=TRUE)
+  } , sanitize.text.function = function(x) x, striped=TRUE, spacing = "m", na = "")
 
 
 
@@ -764,9 +834,9 @@ outputOptions(output, "nsewarn", suspendWhenHidden = FALSE)
 
 
 ### Create a warning for Validation
-output$valwarn <- renderText({ if (reported_gof()$reported_val_re < 0 ) {
+output$valwarn <- renderText({ if (reported_gof()$reported_val_ce < 0 ) {
 			'warn'
-		} else if (gof_results()$NSE - reported_gof()$reported_val_re[1] > 0.2) {
+		} else if (reported_gof()$reported_val_ce[1] <= gof_results()$NSE - 0.2) {
 			'warn'
 		} else {
 			'nope'
@@ -774,6 +844,16 @@ output$valwarn <- renderText({ if (reported_gof()$reported_val_re < 0 ) {
 })
 outputOptions(output, "valwarn", suspendWhenHidden = FALSE)			
 
+
+
+### Add a warning for missing instrumental data
+output$instwarn <- renderText({ if (    all(is.na(paleo_ts_temp()$obs_m3s))  ) {
+			'warn'
+		} else {
+			'nope'
+		}
+})
+outputOptions(output, "instwarn", suspendWhenHidden = FALSE)			
 
 
 ###########################################################################

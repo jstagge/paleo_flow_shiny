@@ -122,9 +122,9 @@ site_annual <- site_annual %>%
 	mutate(reported_cal_r2 = case_when(
 		!is.na(STANAME) ~ adj.r2,
 		TRUE  ~ as.numeric(reported_cal_r2))) %>%
-	mutate(reported_val_re = case_when(
+	mutate(reported_val_ce = case_when(
 		!is.na(STANAME) ~ RE_median,
-		TRUE  ~ as.numeric(reported_val_re))) 
+		TRUE  ~ as.numeric(reported_val_ce))) 
 
 ### Remove columns
 site_annual <- site_annual %>%
@@ -180,6 +180,7 @@ scale_tom3s <- function(x, reported_units, na.rm = FALSE)  (case_when (reported_
 
 ### Convert all to m3s
 site_all <- site_all %>% 
+	mutate(reported_units = case_when(reported_units == "m3/s" ~ "m3s", TRUE ~ reported_units)) %>%
 	mutate_at(c("reported_cal_see", "reported_cal_see_min", "reported_cal_see_max", "reported_val_rmse", "reported_val_rmse_min", "reported_val_rmse_max"), scale_tom3s, reported_units = site_all$reported_units)
 
 
