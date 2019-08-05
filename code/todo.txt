@@ -1,3 +1,0 @@
-Add a second button to download the original
-
-Use the loading wrapper for figures
