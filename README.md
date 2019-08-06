@@ -8,7 +8,9 @@ Paleoflow allows users to visualize and analyze historical streamflows reconstru
 
 <!-- Add a screenshot -->
 <!-- ![Paleoflow website screenshot](/assets/fig1_github.png | width=100)(https://www.google.com) -->
-[![](/assets/fig1_github.png)](https://www.google.com)
+[![](/assets/fig1_github.png  | width=100)](https://www.google.com)
+
+
 [![Paleoflow website screenshot](/assets/fig1_github.png | width=100 "tooltip")](https://www.google.com)
 
 
