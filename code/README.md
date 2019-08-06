@@ -18,7 +18,7 @@ You must set the working directory to the Code folder after pulling the code.
 
 ### Preparing the file system
 
-All necessary R packages will be installed automatically by the file [https://github.com/jstagge/paleo_flow_shiny/blob/master/code/00-prepare_file_system.R](code/00-prepare_file_system.R)
+All necessary R packages will be installed automatically by the file [00-prepare_file_system.R](https://github.com/jstagge/paleo_flow_shiny/blob/master/code/00-prepare_file_system.R)
 
 ```
 Rscript 00-prepare_file_system.R
@@ -26,7 +26,7 @@ Rscript 00-prepare_file_system.R
 
 ### Preparing the flow and site database
 
-To prepare flows and site information, run the next three code files. Files [https://github.com/jstagge/paleo_flow_shiny/blob/master/code/01-process_monthly.R](01-process_monthly.R) and [https://github.com/jstagge/paleo_flow_shiny/blob/master/code/02-process_annual.R](02-process_annual.R) process the monthly and annual flow data, respectively. File [https://github.com/jstagge/paleo_flow_shiny/blob/master/code/03_merge_preprocess.R](03_merge_preprocess.R) merges the output from these files into a single file, along with processing site information.
+To prepare flows and site information, run the next three code files. Files [01-process_monthly.R](https://github.com/jstagge/paleo_flow_shiny/blob/master/code/01-process_monthly.R) and [02-process_annual.R](https://github.com/jstagge/paleo_flow_shiny/blob/master/code/02-process_annual.R) process the monthly and annual flow data, respectively. File [03_merge_preprocess.R](https://github.com/jstagge/paleo_flow_shiny/blob/master/code/03_merge_preprocess.R) merges the output from these files into a single file, along with processing site information.
 
 ```
 Rscript 01-process_monthly.R
@@ -36,14 +36,14 @@ Rscript 03_merge_preprocess.R
 
 ### Testing the website locally
 
-To run the website locally, run the file [https://github.com/jstagge/paleo_flow_shiny/blob/master/code/04_paleo_app.R](04_paleo_app.R)
+To run the website locally, run the file [04_paleo_app.R](https://github.com/jstagge/paleo_flow_shiny/blob/master/code/04_paleo_app.R)
 
 ```
 Rscript 04_paleo_app.R
 ```
 
 ## Organization of the website code repository
-All website code is located in the [https://github.com/jstagge/paleo_flow_shiny/blob/master/code/paleo_flow/](code/paleo_flow/) directory.
+All website code is located in the [code/paleo_flow/](https://github.com/jstagge/paleo_flow_shiny/blob/master/code/paleo_flow/) directory.
 
 Within this folder, the global.R file opens the required packages and reads in all data. The ui.R file sets up the User Interface. The server.R runs the server-side code, by directing the server to external/app.R, which contains all server-side code.
 
