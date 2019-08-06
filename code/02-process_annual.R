@@ -1,36 +1,14 @@
 # *------------------------------------------------------------------
-# | PROGRAM NAME: 01-processing
-# | FILE NAME: 01-processing.R
+# | PROGRAM NAME: 02-process_annual
+# | FILE NAME: 02-process_annual.R
 # | DATE: 
 # | CREATED BY:  Jim Stagge         
 # *----------------------------------------------------------------
-# | PURPOSE:  This code prepares flows to be read into the paleostreamflow app.
-# | 
-# | 
-# | 
-# *------------------------------------------------------------------
-# | COMMENTS:               
-# |
-# |  1:  
-# |  2: 
-# |  3: 
-# |*------------------------------------------------------------------
-# | DATA USED:               
-# | Streamflow reconstructions from Stagge et al. (2017) "Monthly paleostreamflow
-# \ reconstruction from annual tree-ring chronologies." Journal of Hydrology
-# |
-# |*------------------------------------------------------------------
-# | CONTENTS:               
-# |
-# |  PART 1:  
-# |  PART 2: 
-# |  PART 3: 
-# *-----------------------------------------------------------------
-# | UPDATES:               
-# |
+# | PURPOSE:  This code processes all annual flow data for use in the paleostreamflow app.
 # |
 # *------------------------------------------------------------------
- 
+
+
 ###########################################################################
 ## Set the Paths
 ###########################################################################
@@ -64,16 +42,12 @@ dir.create(file.path(app_output_path,"annual"))
 ###########################################################################
 ###  Load functions
 ###########################################################################
-### Load these functions for all code
-require(colorout)
-require(assertthat)
-require(reshape2)
-
 ### Load these functions for this unique project
 library(dataRetrieval)
 require(lubridate)
 require(tidyverse)
 require(ggplot2) 
+require(staggefuncs)
 
 ### Load project specific functions
 file.sources = list.files(function_path, pattern="*.R", recursive=TRUE)
@@ -82,9 +56,6 @@ sapply(file.path(function_path, file.sources),source)
 ### Load global functions
 file.sources = list.files(global_path, pattern="*.R", recursive=TRUE)
 sapply(file.path(global_path, file.sources),source)
-
-require(staggefuncs)
-
 
 
 ###########################################################################

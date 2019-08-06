@@ -1,35 +1,14 @@
 # *------------------------------------------------------------------
-# | PROGRAM NAME: 01-processing
-# | FILE NAME: 01-processing.R
+# | PROGRAM NAME: 03-merge_preprocess
+# | FILE NAME: 03-merge_preprocess.R
 # | DATE: 
 # | CREATED BY:  Jim Stagge         
 # *----------------------------------------------------------------
-# | PURPOSE:  This code prepares flows to be read into the paleostreamflow app.
-# | 
-# | 
-# | 
-# *------------------------------------------------------------------
-# | COMMENTS:               
-# |
-# |  1:  
-# |  2: 
-# |  3: 
-# |*------------------------------------------------------------------
-# | DATA USED:               
-# | Streamflow reconstructions from Stagge et al. (2017) "Monthly paleostreamflow
-# \ reconstruction from annual tree-ring chronologies." Journal of Hydrology
-# |
-# |*------------------------------------------------------------------
-# | CONTENTS:               
-# |
-# |  PART 1:  
-# |  PART 2: 
-# |  PART 3: 
-# *-----------------------------------------------------------------
-# | UPDATES:               
-# |
+# | PURPOSE:  This code merges and pre-processes annual and monthly flow.
+# | 			It saves it for use in the paleflow website.
 # |
 # *------------------------------------------------------------------
+
  
 ###########################################################################
 ## Set the Paths
@@ -50,11 +29,6 @@ output_path_base <- file.path(output_path,"paleo_flow_shiny")
 ###########################################################################
 ###  Load functions
 ###########################################################################
-### Load these functions for all code
-require(colorout)
-require(assertthat)
-require(reshape2)
-
 ### Load these functions for this unique project
 require(lubridate)
 require(tidyverse)

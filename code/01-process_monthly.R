@@ -1,33 +1,10 @@
 # *------------------------------------------------------------------
-# | PROGRAM NAME: 01-processing
-# | FILE NAME: 01-processing.R
+# | PROGRAM NAME: 01-process_monthly
+# | FILE NAME: 01-process_monthly.R
 # | DATE: 
 # | CREATED BY:  Jim Stagge         
 # *----------------------------------------------------------------
-# | PURPOSE:  This code prepares flows to be read into the paleostreamflow app.
-# | 
-# | 
-# | 
-# *------------------------------------------------------------------
-# | COMMENTS:               
-# |
-# |  1:  
-# |  2: 
-# |  3: 
-# |*------------------------------------------------------------------
-# | DATA USED:               
-# | Streamflow reconstructions from Stagge et al. (2017) "Monthly paleostreamflow
-# \ reconstruction from annual tree-ring chronologies." Journal of Hydrology
-# |
-# |*------------------------------------------------------------------
-# | CONTENTS:               
-# |
-# |  PART 1:  
-# |  PART 2: 
-# |  PART 3: 
-# *-----------------------------------------------------------------
-# | UPDATES:               
-# |
+# | PURPOSE:  This code processes all monthly data for use in the paleostreamflow app.
 # |
 # *------------------------------------------------------------------
  
@@ -56,11 +33,6 @@ dir.create(file.path(app_output_path,"annual"))
 ###########################################################################
 ###  Load functions
 ###########################################################################
-### Load these functions for all code
-require(colorout)
-require(assertthat)
-require(reshape2)
-
 ### Load these functions for this unique project
 library(datasets)
 require(lubridate)

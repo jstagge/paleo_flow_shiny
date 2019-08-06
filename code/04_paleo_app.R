@@ -1,55 +1,16 @@
 # *------------------------------------------------------------------
-# | PROGRAM NAME: 02-paleo_app
-# | FILE NAME: 02-paleo_app.R
+# | PROGRAM NAME: 04-paleo_app
+# | FILE NAME: 04-paleo_app.R
 # | DATE: 
 # | CREATED BY:  Jim Stagge         
 # *----------------------------------------------------------------
-# | PURPOSE:  This code creates the paleostreamflow app and uploads to the
-# |				Shinyapps website.
-# | 
-# | 
-# | 
-# *------------------------------------------------------------------
-# | COMMENTS:               
-# |
-# |  1:  
-# |  2: 
-# |  3: 
-# |*------------------------------------------------------------------
-# | DATA USED:               
-# | Streamflow reconstructions from Stagge et al. (2017) "Monthly paleostreamflow
-# \ reconstruction from annual tree-ring chronologies." Journal of Hydrology
-# |
-# |*------------------------------------------------------------------
-# | CONTENTS:               
-# |
-# |  PART 1:  
-# |  PART 2: 
-# |  PART 3: 
-# *-----------------------------------------------------------------
-# | UPDATES:               
-# |
+# | PURPOSE:  This code runs the paleoflow website locally to test the website.
 # |
 # *------------------------------------------------------------------
  
- 
-###########################################################################
-## Set the Paths
-###########################################################################
-
 ###########################################################################
 ###  Load functions
 ###########################################################################
-### Load these functions for all code
-#require(colorout)
-require(assertthat)
-require(reshape2)
-
-### Needed for my laptop
-#require(later)
-
-#devtools::install_github("jcheng5/googleCharts")
-
 ### Load these functions for this unique project
 require(rsconnect)
 require(googleCharts)
@@ -82,27 +43,11 @@ require(shinyBS)
 
 
 ###########################################################################
-## Set Initial Values
+## Run the app locally to test
 ###########################################################################
-
-
-
-###########################################################################
-## Run the app on personal computer in diagnostic mode
-###########################################################################
-#runApp("paleo_flow", display.mode = "showcase")
-
+### Run the website locally
 runApp("paleo_flow")
 
-##runApp("my_example5")
-
-
-###########################################################################
-##  Publish to Shiny website/
-###########################################################################
-##rsconnect::deployApp("paleo_flow")
-
-
-
-
+### Adds a side panel for diagnostics
+#runApp("paleo_flow", display.mode = "showcase")
 
