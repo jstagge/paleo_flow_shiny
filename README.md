@@ -8,7 +8,13 @@ Paleoflow allows users to visualize and analyze historical streamflows reconstru
 
 <!-- Add a screenshot -->
 <!-- ![Paleoflow website screenshot](/assets/fig1_github.png | width=100)(https://www.google.com) -->
-[![](/assets/fig1_github.png  | width=100)](https://www.google.com)
+
+[![](/assets/fig1_github.png )](https://www.google.com)
+
+<a href="http://www.paleoflow.org/">
+    <img src="/assets/fig1_github.png" 
+    width="100" alt="Paleoflow website screenshot">
+</a>
 
 
 [![Paleoflow website screenshot](/assets/fig1_github.png | width=100 "tooltip")](https://www.google.com)
