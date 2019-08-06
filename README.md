@@ -6,6 +6,9 @@ This repository contains code associated with the Paleoflow website, available a
 
 Paleoflow allows users to visualize and analyze historical streamflows reconstructed from tree-rings. Users can quickly view and interact with reconstructed flow data online, rather than downloading raw data and processing it offline. Further, users can view the full reconstruction, zoom in on important periods, extract extreme flow details, compare two historical periods, and see the reconstruction’s goodness-of-fit. Users can also submit new reconstructions. This interactivity is intended to increase use, and thereby interest and confidence, among researchers, stakeholders, decision makers, and the public. 
 
+<!-- Add a screenshot -->
+
+
 ## Code
 
 All code is presented in the [Code Folder](https://github.com/jstagge/paleo_flow_shiny/tree/master/code), with more detailed explanations.
