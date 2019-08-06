@@ -7,7 +7,7 @@ This repository contains code associated with the Paleoflow website, available a
 Paleoflow allows users to visualize and analyze historical streamflows reconstructed from tree-rings. Users can quickly view and interact with reconstructed flow data online, rather than downloading raw data and processing it offline. Further, users can view the full reconstruction, zoom in on important periods, extract extreme flow details, compare two historical periods, and see the reconstruction’s goodness-of-fit. Users can also submit new reconstructions. This interactivity is intended to increase use, and thereby interest and confidence, among researchers, stakeholders, decision makers, and the public. 
 
 <!-- Add a screenshot -->
-
+![Paleoflow website screenshot](/assets/fig1_github.png)
 
 ## Code
 
@@ -21,8 +21,7 @@ For description of this website and package, please use the following citation:
 
 For any use of this code, please cite the above paper and the following:
 
-* [![DOI](https://zenodo.org/badge/84977163.svg)](https://zenodo.org/badge/latestdoi/84977163)
-
+* Stagge, J.H. (2019). jstagge/paleo_flow_shiny: Version 3.0.0. Zenodo. doi: 10.5281/zenodo.583166 [http://doi.org/10.5281/zenodo.583166](http://doi.org/10.5281/zenodo.583166)
 
 ## Authors
 

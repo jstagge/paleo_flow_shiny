@@ -56,8 +56,7 @@ For description of this website and package, please use the following citation:
 
 For any use of this code, please cite the above paper and the following:
 
-* [![DOI](https://zenodo.org/badge/84977163.svg)](https://zenodo.org/badge/latestdoi/84977163)
-
+* Stagge, J.H. (2019). jstagge/paleo_flow_shiny: Version 3.0.0. Zenodo. doi: 10.5281/zenodo.583166 [http://doi.org/10.5281/zenodo.583166](http://doi.org/10.5281/zenodo.583166)
 
 ## Authors
 
