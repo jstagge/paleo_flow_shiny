@@ -54,9 +54,9 @@ For description of this website and package, please use the following citation:
 
 * Stagge, J.H., Rosenberg, D.E., and DeRose, R.J. (2019) "PaleoFlow: An Online Visualization Tool for Reconstructed Streamflows." SoftwareX. [In review](https://www.journals.elsevier.com/softwarex).
 
-For any use of this code, please cite the above paper and the following:
+For use of this code, please cite the above paper and the following:
 
-* Stagge, J.H. (2019). jstagge/paleo_flow_shiny: Version 3.0.0. Zenodo. doi: 10.5281/zenodo.583166 [http://doi.org/10.5281/zenodo.583166](http://doi.org/10.5281/zenodo.583166)
+* Stagge, J.H. (2019). jstagge/paleo_flow_shiny: Version 3.1. Zenodo. doi: 10.5281/zenodo.3361845 [http://doi.org/10.5281/zenodo.3361845](http://doi.org/10.5281/zenodo.3361845)
 
 ## Authors
 
